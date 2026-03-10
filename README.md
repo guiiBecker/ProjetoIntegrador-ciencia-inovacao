@@ -12,3 +12,7 @@
 
 #### EI 1 - Obersavação da realidade
 - [Guilherme Becker](https://docs.google.com/document/d/12jOV01ho_7-I8DX4pJSrgOnNP_TIm-eZ4paqD2Loexc/edit?usp=sharing)
+
+
+#### EI 2 - Definição de pontos-chaves
+- [Docs](https://docs.google.com/document/d/1N9enOUNENvEvrqJLTzDohm6vG22rIurjSkAFWuw7sG4/edit?usp=sharing)
