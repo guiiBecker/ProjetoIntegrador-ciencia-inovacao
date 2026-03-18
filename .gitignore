@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React
+projetointegrador-html5/build
+projetointegrador-html5/.env.local
+projetointegrador-html5/.env.development.local
+projetointegrador-html5/.env.test.local
+projetointegrador-html5/.env.production.local
+
+# Backend
+projetointegrador-web/.env
+projetointegrador-web/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Docker
+.docker/
+
+# Logs
+logs/
+*.log
+
+# Misc
+.cache/
+dist/

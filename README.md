@@ -1,7 +1,55 @@
 # ProjetoIntegrador-ciencia-inovacao
 
+## 🚀 Como Executar
 
+### Pré-requisitos
+- Docker e Docker Compose instalados
 
+### Executar com Docker (Recomendado)
+
+```bash
+# Subir frontend (React) e backend (Express) juntos
+docker-compose up --build
+```
+
+Serviços disponíveis:
+- **Frontend (React)**: http://localhost:3000
+- **Backend (Express)**: http://localhost:5000
+
+### Comandos Docker úteis
+
+```bash
+# Rodar em background
+docker-compose up -d
+
+# Parar os containers
+docker-compose down
+
+# Ver logs
+docker-compose logs -f
+
+# Logs de um serviço específico
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+### Executar localmente (sem Docker)
+
+#### Backend
+```bash
+cd projetointegrador-web
+npm install
+npm start  # ou node index.js
+```
+
+#### Frontend
+```bash
+cd projetointegrador-html5
+npm install
+npm start
+```
+
+---
 
 
 

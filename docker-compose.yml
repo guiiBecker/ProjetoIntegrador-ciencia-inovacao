@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./projetointegrador-html5
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    container_name: react-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./projetointegrador-web
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    container_name: express-backend
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
