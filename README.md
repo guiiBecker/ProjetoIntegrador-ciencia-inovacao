@@ -61,7 +61,7 @@ npm start
 #### EI 1 - Observação da realidade
 - [Guilherme Becker](https://docs.google.com/document/d/12jOV01ho_7-I8DX4pJSrgOnNP_TIm-eZ4paqD2Loexc/edit?usp=sharing)
 - [Nathan](https://docs.google.com/document/d/1JvRbP3S5rKVBHpJiEQtdgqNNlvm2yQgE-9xoeInZl2s/edit?usp=sharing)
-
+- [Victor](https://docs.google.com/document/d/103vBZUB4yWUC7UD_pqKSaKyhfg762lt-WWv9FsOc2WA/edit?usp=sharing)
 
 #### EI 2 - Definição de pontos-chaves
 - [Docs](https://docs.google.com/document/d/1N9enOUNENvEvrqJLTzDohm6vG22rIurjSkAFWuw7sG4/edit?usp=sharing)
