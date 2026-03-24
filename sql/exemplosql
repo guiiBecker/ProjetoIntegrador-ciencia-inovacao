@@ -1,0 +1,122 @@
+-- =========================
+-- PROFESSOR
+-- =========================
+CREATE TABLE professor (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    carga_horaria INT NOT NULL
+);
+
+-- =========================
+-- DISCIPLINA
+-- =========================
+CREATE TABLE disciplina (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    peso INT
+);
+
+-- =========================
+-- TURMA
+-- =========================
+CREATE TABLE turma (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(50),
+    ano INT,
+    ano_letivo INT
+);
+
+-- =========================
+-- TURNO
+-- =========================
+CREATE TABLE turno (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(50) NOT NULL
+);
+
+-- =========================
+-- DIA DA SEMANA
+-- =========================
+CREATE TABLE dia_semana (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(20) NOT NULL
+);
+
+-- =========================
+-- PERÍODO
+-- =========================
+CREATE TABLE periodo (
+    id SERIAL PRIMARY KEY,
+    numero INT,
+    hora_inicio TIME,
+    hora_fim TIME,
+    turno_id INT REFERENCES turno(id)
+);
+
+-- =========================
+-- TIMESLOT (dia + período)
+-- =========================
+CREATE TABLE time_slot (
+    id SERIAL PRIMARY KEY,
+    dia_id INT REFERENCES dia_semana(id),
+    periodo_id INT REFERENCES periodo(id)
+);
+
+-- =========================
+-- DISPONIBILIDADE DO PROFESSOR
+-- =========================
+CREATE TABLE professor_disponibilidade (
+    id SERIAL PRIMARY KEY,
+    professor_id INT REFERENCES professor(id),
+    time_slot_id INT REFERENCES time_slot(id),
+    disponivel BOOLEAN DEFAULT TRUE,
+    preferencia INT
+);
+
+-- =========================
+-- TURMA ↔ TURNO
+-- =========================
+CREATE TABLE turma_turno (
+    id SERIAL PRIMARY KEY,
+    turma_id INT REFERENCES turma(id),
+    turno_id INT REFERENCES turno(id)
+);
+
+-- =========================
+-- TABELA CENTRAL
+-- =========================
+CREATE TABLE turmas_disciplinas (
+    id SERIAL PRIMARY KEY,
+    turma_id INT REFERENCES turma(id),
+    disciplina_id INT REFERENCES disciplina(id),
+    professor_id INT REFERENCES professor(id),
+    aulas_semana INT NOT NULL,
+    tamanho_bloco INT NOT NULL
+);
+
+-- =========================
+-- CURRÍCULO
+-- =========================
+CREATE TABLE curriculo_serie (
+    id SERIAL PRIMARY KEY,
+    serie VARCHAR(20),
+    disciplina_id INT REFERENCES disciplina(id),
+    aulas_semana INT,
+    tamanho_bloco INT
+);
+
+-- =========================
+-- HORÁRIO FINAL
+-- =========================
+CREATE TABLE horario (
+    id SERIAL PRIMARY KEY,
+    turma_disciplina_id INT REFERENCES turmas_disciplinas(id),
+    time_slot_id INT REFERENCES time_slot(id)
+);
+
+-- =========================
+-- ÍNDICES
+-- =========================
+CREATE INDEX idx_prof_disp ON professor_disponibilidade(professor_id);
+CREATE INDEX idx_timeslot ON time_slot(dia_id, periodo_id);
+CREATE INDEX idx_horario ON horario(time_slot_id);
