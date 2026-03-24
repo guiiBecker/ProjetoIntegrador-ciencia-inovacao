@@ -60,6 +60,7 @@ npm start
 
 #### EI 1 - Obersavação da realidade
 - [Guilherme Becker](https://docs.google.com/document/d/12jOV01ho_7-I8DX4pJSrgOnNP_TIm-eZ4paqD2Loexc/edit?usp=sharing)
+- [Nathan](https://docs.google.com/document/d/1JvRbP3S5rKVBHpJiEQtdgqNNlvm2yQgE-9xoeInZl2s/edit?usp=sharing)
 
 
 #### EI 2 - Definição de pontos-chaves
