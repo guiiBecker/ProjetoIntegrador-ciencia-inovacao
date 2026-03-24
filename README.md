@@ -58,7 +58,7 @@ npm start
 - [SQLSchema](https://excalidraw.com/#room=515214038d17ffe6b14f,TlkKqZ4JJ3FXbx5RHOL3Gg)
 
 
-#### EI 1 - Obersavação da realidade
+#### EI 1 - Observação da realidade
 - [Guilherme Becker](https://docs.google.com/document/d/12jOV01ho_7-I8DX4pJSrgOnNP_TIm-eZ4paqD2Loexc/edit?usp=sharing)
 - [Nathan](https://docs.google.com/document/d/1JvRbP3S5rKVBHpJiEQtdgqNNlvm2yQgE-9xoeInZl2s/edit?usp=sharing)
 
