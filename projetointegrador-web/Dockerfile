@@ -4,10 +4,12 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --production
+RUN npm install
 
 COPY . .
 
+RUN npm run build && npm prune --omit=dev
+
 EXPOSE 5000
 
-CMD ["node", "index.js"]
+CMD ["npm", "start"]

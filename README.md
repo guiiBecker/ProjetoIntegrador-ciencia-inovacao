@@ -63,6 +63,7 @@ npm start
 - [Nathan](https://docs.google.com/document/d/1JvRbP3S5rKVBHpJiEQtdgqNNlvm2yQgE-9xoeInZl2s/edit?usp=sharing)
 - [Victor](https://docs.google.com/document/d/103vBZUB4yWUC7UD_pqKSaKyhfg762lt-WWv9FsOc2WA/edit?usp=sharing)
 - [Anderson](https://docs.google.com/document/d/1bjfe1yFNRZ9LrU-4yNGNKF0e0FlTsOBZAGm1oCKG1DE/edit?usp=sharing)
+- [Henrique](https://docs.google.com/document/d/1jbpMk_BcG3A7aISHRYrBRlC7h38M07AddzvmLbzhaec/edit?usp=sharing)
 
 #### EI 2 - Definição de pontos-chaves
 - [Docs](https://docs.google.com/document/d/1N9enOUNENvEvrqJLTzDohm6vG22rIurjSkAFWuw7sG4/edit?usp=sharing)
