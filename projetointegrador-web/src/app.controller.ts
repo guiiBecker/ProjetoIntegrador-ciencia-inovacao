@@ -14,4 +14,9 @@ export class AppController {
   getHealth(): { status: string; timestamp: Date } {
     return this.appService.getHealth();
   }
+
+  @Get('api/db-health')
+  async getDbHealth(): Promise<{ status: string; timestamp: string }> {
+    return this.appService.getDbHealth();
+  }
 }

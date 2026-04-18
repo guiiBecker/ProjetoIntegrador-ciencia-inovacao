@@ -1,0 +1,38 @@
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Tipo badges */
+.badge-aula { background: #c8e6c9; color: #1b5e20; }
+.badge-intervalo { background: #fff3cd; color: #856404; }
+.badge-extra { background: #e0e0e0; color: #555; }
+
+/* Status badges */
+.badge-pending { background: #fff3cd; color: #856404; }
+.badge-processing { background: #cce5ff; color: #004085; }
+.badge-completed { background: #d4edda; color: #155724; }
+.badge-failed { background: #f8d7da; color: #721c24; }
+.badge-confirmed { background: #c8e6c9; color: #1b5e20; }
+
+/* Selected option badge */
+.badge-selected {
+  background: #4caf50;
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* Score badge */
+.badge-score {
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: 500;
+  background: transparent;
+  padding: 0;
+}

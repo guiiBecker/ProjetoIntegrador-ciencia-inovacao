@@ -1,0 +1,31 @@
+.prof-page {
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+}
+
+.prof-page h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #1a1a2e;
+}
+
+.config-hint {
+  font-size: 0.82rem;
+  color: #888;
+  margin-bottom: 1rem;
+}
+
+.link-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.links-history {
+  margin-top: 2rem;
+}
+.links-history h4 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: #333;
+}

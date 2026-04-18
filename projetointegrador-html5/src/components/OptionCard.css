@@ -1,0 +1,33 @@
+.option-card {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.option-card.selected { border-color: #4caf50; }
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+}
+.option-header h3 { font-size: 1rem; margin-bottom: 0.15rem; }
+
+.edit-hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0.5rem 1.25rem 0;
+  font-style: italic;
+}
+
+.timetables-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
