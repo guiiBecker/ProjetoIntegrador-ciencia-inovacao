@@ -40,3 +40,9 @@ logs/
 # Misc
 .cache/
 dist/
+
+# Backlog (local only)
+BACKLOG.md
+
+# Local context (not tracked)
+context.md
