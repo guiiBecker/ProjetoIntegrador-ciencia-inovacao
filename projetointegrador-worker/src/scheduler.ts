@@ -95,6 +95,29 @@ function getSlotsByTurnoAndDay(
   return byDay;
 }
 
+// Returns true if adding a block of size `blockSize` starting at position
+// `blockStart` in `daySlots` keeps the resource's occupied positions contiguous
+// (no holes between previously used positions and the new block).
+function isContiguous(
+  used: Set<number> | undefined,
+  daySlots: TimeSlotInfo[],
+  blockStart: number,
+  blockSize: number,
+): boolean {
+  if (!used || used.size === 0) return true;
+  const positions: number[] = [];
+  for (let p = 0; p < daySlots.length; p++) {
+    if (used.has(daySlots[p].id)) positions.push(p);
+  }
+  if (positions.length === 0) return true;
+  for (let j = 0; j < blockSize; j++) positions.push(blockStart + j);
+  positions.sort((a, b) => a - b);
+  for (let k = 1; k < positions.length; k++) {
+    if (positions[k] !== positions[k - 1] + 1) return false;
+  }
+  return true;
+}
+
 function findValidBlocks(
   td: TurmaDisciplina,
   slotsByDay: Map<number, TimeSlotInfo[]>,
@@ -126,6 +149,15 @@ function findValidBlocks(
         if (state.turmaUsed.get(td.turma_id)?.has(slot.id)) { valid = false; break; }
         slotIds.push(slot.id);
         totalPref += disp.preferencia;
+      }
+
+      // No-gap constraints: positions in the day's aula sequence (existing + new)
+      // must be contiguous. Position-based so recreios are not counted as gaps.
+      if (valid && !isContiguous(state.professorUsed.get(td.professor_id), daySlots, i, td.tamanho_bloco)) {
+        valid = false;
+      }
+      if (valid && !isContiguous(state.turmaUsed.get(td.turma_id), daySlots, i, td.tamanho_bloco)) {
+        valid = false;
       }
 
       if (valid) {
@@ -199,7 +231,6 @@ function strategyGreedy(
     for (let b = 0; b < blocksNeeded; b++) {
       const candidates = findValidBlocks(td, slotsByDay, profDispMap, state);
       if (candidates.length === 0) break;
-      // Pick highest preference
       candidates.sort((a, b) => b.avgPref - a.avgPref);
       const chosen = candidates[0];
       markSlots(state, td.professor_id, td.turma_id, chosen.slotIds);
@@ -216,43 +247,7 @@ function strategyGreedy(
   };
 }
 
-// Strategy 2: Random First-Fit - Shuffle order and pick random valid slots
-function strategyRandom(
-  tds: TurmaDisciplina[],
-  slots: TimeSlotInfo[],
-  profDisps: ProfDisp[],
-): ScheduleResult {
-  const profDispMap = buildProfDispMap(profDisps);
-  const state = newState();
-
-  const shuffled = [...tds].sort(() => Math.random() - 0.5);
-  const allAssignments: Assignment[] = [];
-  let totalNeeded = 0;
-
-  for (const td of shuffled) {
-    totalNeeded += td.aulas_semana;
-    const slotsByDay = getSlotsByTurnoAndDay(slots, td.turno_id);
-    const blocksNeeded = Math.ceil(td.aulas_semana / td.tamanho_bloco);
-
-    for (let b = 0; b < blocksNeeded; b++) {
-      const candidates = findValidBlocks(td, slotsByDay, profDispMap, state);
-      if (candidates.length === 0) break;
-      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-      markSlots(state, td.professor_id, td.turma_id, chosen.slotIds);
-      for (const slotId of chosen.slotIds) {
-        allAssignments.push({ turma_disciplina_id: td.id, time_slot_id: slotId });
-      }
-    }
-  }
-
-  return {
-    strategy: 'random_first_fit',
-    assignments: allAssignments,
-    score: totalNeeded > 0 ? (allAssignments.length / totalNeeded) * 100 : 0,
-  };
-}
-
-// Strategy 3: Balanced Distribution - Spread classes evenly across the week
+// Strategy 2: Balanced Distribution - Spread classes evenly across the week
 function strategyBalanced(
   tds: TurmaDisciplina[],
   slots: TimeSlotInfo[],
@@ -262,7 +257,6 @@ function strategyBalanced(
   const state = newState();
   const dayLoad = new Map<number, Map<number, number>>();
 
-  // Sort by most aulas first to place hardest first
   const sorted = [...tds].sort((a, b) => b.aulas_semana - a.aulas_semana);
   const allAssignments: Assignment[] = [];
   let totalNeeded = 0;
@@ -277,7 +271,6 @@ function strategyBalanced(
     for (let b = 0; b < blocksNeeded; b++) {
       const candidates = findValidBlocks(td, slotsByDay, profDispMap, state);
       if (candidates.length === 0) break;
-      // Pick the day with least load, then highest preference
       candidates.sort((a, cb) => {
         const loadA = turmaLoad.get(a.diaId) || 0;
         const loadB = turmaLoad.get(cb.diaId) || 0;
@@ -324,7 +317,6 @@ export async function generateSchedules(
 
     const results: ScheduleResult[] = [
       strategyGreedy(turmaDisciplinas, timeSlots, profDisp),
-      strategyRandom(turmaDisciplinas, timeSlots, profDisp),
       strategyBalanced(turmaDisciplinas, timeSlots, profDisp),
     ];
 
@@ -354,7 +346,7 @@ export async function generateSchedules(
       "UPDATE schedule_request SET status = 'completed' WHERE id = $1",
       [requestId],
     );
-    console.log(`[Scheduler] Request ${requestId}: generated 3 options`);
+    console.log(`[Scheduler] Request ${requestId}: generated 2 options`);
   } catch (error) {
     console.error(`[Scheduler] Request ${requestId} failed:`, error);
     await pool.query(

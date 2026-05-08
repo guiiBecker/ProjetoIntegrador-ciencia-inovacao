@@ -142,7 +142,7 @@ export default function GradePage() {
           {activeRequest && (activeRequest.status === 'completed' || activeRequest.status === 'confirmed') && activeRequest.options && (
             <div className="options-container">
               <div className="options-header-bar">
-                <h2>{isConfirmed ? `Grade Confirmada - Requisicao #${activeRequest.id}` : `3 Opcoes de Grade - Requisicao #${activeRequest.id}`}</h2>
+                <h2>{isConfirmed ? `Grade Confirmada - Requisicao #${activeRequest.id}` : `2 Opcoes de Grade - Requisicao #${activeRequest.id}`}</h2>
                 {!isConfirmed && hasSelectedOption && <Button variant="confirm" onClick={handleConfirm}>Confirmar Grade Final</Button>}
               </div>
               {isConfirmed && <div className="confirmed-banner">Grade salva com sucesso na base de dados.</div>}

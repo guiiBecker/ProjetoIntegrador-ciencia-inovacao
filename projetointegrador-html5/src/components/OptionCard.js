@@ -4,9 +4,8 @@ import TimetableGrid from './TimetableGrid';
 import './OptionCard.css';
 
 const STRATEGY_LABELS = {
-  balanced: 'Equilibrada',
-  compacted: 'Compactada',
-  teacher_preferred: 'Preferencia Docente',
+  greedy_best_preference: 'Melhor Preferencia (Guloso)',
+  balanced_distribution: 'Distribuicao Equilibrada',
 };
 
 export default function OptionCard({ option, onSelect, isSelected, editable, selectedItem, onCellClick, isConfirmed }) {
