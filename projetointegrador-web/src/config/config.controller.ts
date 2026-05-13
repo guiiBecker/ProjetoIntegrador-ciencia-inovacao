@@ -8,10 +8,16 @@ import {
   HttpException,
   HttpStatus,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from './config.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('api/config')
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('admin')
 export class ConfigController {
   constructor(private readonly configService: ConfigService) {}
 

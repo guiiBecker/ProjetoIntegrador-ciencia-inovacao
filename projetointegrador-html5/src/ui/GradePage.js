@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API_URL } from '../api';
+import { apiFetch, apiJson } from '../api';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Spinner from '../components/Spinner';
@@ -16,16 +16,14 @@ export default function GradePage() {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/schedule`);
-      const data = await res.json();
+      const data = await apiJson('/api/schedule');
       setRequests(data);
     } catch (err) { console.error(err); }
   }, []);
 
   const fetchDetail = useCallback(async (id) => {
     try {
-      const res = await fetch(`${API_URL}/api/schedule/${id}`);
-      const data = await res.json();
+      const data = await apiJson(`/api/schedule/${id}`);
       setActiveRequest(data);
       return data;
     } catch (err) { console.error(err); return null; }
@@ -50,7 +48,7 @@ export default function GradePage() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/schedule`, { method: 'POST' });
+      const res = await apiFetch('/api/schedule', { method: 'POST' });
       const data = await res.json();
       await fetchDetail(data.id);
       setPolling(true);
@@ -60,7 +58,7 @@ export default function GradePage() {
 
   const handleSelect = async (optionId) => {
     try {
-      await fetch(`${API_URL}/api/schedule/${activeRequest.id}/select`, {
+      await apiFetch(`/api/schedule/${activeRequest.id}/select`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionId }),
       });
@@ -91,7 +89,7 @@ export default function GradePage() {
         return;
       }
       try {
-        const res = await fetch(`${API_URL}/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}/swap/${cell.item_id}`, {
+        const res = await apiFetch(`/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}/swap/${cell.item_id}`, {
           method: 'POST',
         });
         const data = await res.json().catch(() => ({}));
@@ -122,7 +120,7 @@ export default function GradePage() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}`, {
+      const res = await apiFetch(`/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ diaId, periodoNumero: periodoNum }),
       });
@@ -135,7 +133,7 @@ export default function GradePage() {
 
   const handleConfirm = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/schedule/${activeRequest.id}/confirm`, { method: 'POST' });
+      const res = await apiFetch(`/api/schedule/${activeRequest.id}/confirm`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) { setEditError(data.message || 'Erro ao confirmar'); return; }
       setSelectedItem(null); setEditError('');

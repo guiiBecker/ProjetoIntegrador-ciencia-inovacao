@@ -7,14 +7,21 @@ import {
   HttpException,
   HttpStatus,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { FormService } from './form.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Public } from '../auth/public.decorator';
 
 @Controller('api/form')
+@UseGuards(AuthGuard, RolesGuard)
 export class FormController {
   constructor(private readonly formService: FormService) {}
 
   @Post('generate/:professorId')
+  @Roles('admin')
   async generateLink(
     @Param('professorId', ParseIntPipe) professorId: number,
   ): Promise<{ token: string }> {
@@ -26,11 +33,13 @@ export class FormController {
   }
 
   @Get('links')
+  @Roles('admin')
   async listLinks(): Promise<unknown[]> {
     return this.formService.listLinks();
   }
 
   @Get(':token')
+  @Public()
   async getFormData(@Param('token') token: string): Promise<unknown> {
     const data = await this.formService.getFormData(token);
     if (!data) {
@@ -40,6 +49,7 @@ export class FormController {
   }
 
   @Post(':token/submit')
+  @Public()
   async submitAvailability(
     @Param('token') token: string,
     @Body() body: { disponibilidade: Array<{ time_slot_id: number; disponivel: boolean; preferencia: number }> },

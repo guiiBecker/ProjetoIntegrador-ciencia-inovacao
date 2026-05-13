@@ -1,5 +1,6 @@
 .app-nav {
   display: flex;
+  flex-wrap: wrap;
   background: #16213e;
   padding: 0;
 }

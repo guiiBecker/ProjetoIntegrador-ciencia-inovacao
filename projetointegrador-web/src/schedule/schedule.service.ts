@@ -27,6 +27,13 @@ export class ScheduleService {
     return result.rows;
   }
 
+  async listConfirmedRequests(): Promise<unknown[]> {
+    const result = await this.pool.query(
+      "SELECT id, status, criado_em FROM schedule_request WHERE status = 'confirmed' ORDER BY criado_em DESC",
+    );
+    return result.rows;
+  }
+
   async getRequest(id: number): Promise<unknown | null> {
     const reqResult = await this.pool.query(
       'SELECT id, status, criado_em FROM schedule_request WHERE id = $1',
@@ -102,6 +109,14 @@ export class ScheduleService {
     }
 
     return { ...request, options, professorAvailability };
+  }
+
+  async getPublicRequest(id: number): Promise<unknown | null> {
+    const request = await this.getRequest(id);
+    if (!request || (request as { status?: string }).status !== 'confirmed') {
+      return null;
+    }
+    return request;
   }
 
   async selectOption(

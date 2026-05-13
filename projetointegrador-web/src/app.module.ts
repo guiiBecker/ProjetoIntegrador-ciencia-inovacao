@@ -6,9 +6,10 @@ import { QueueModule } from './queue/queue.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ConfigModule } from './config/config.module';
 import { FormModule } from './form/form.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [DatabaseModule, QueueModule, ScheduleModule, ConfigModule, FormModule],
+  imports: [DatabaseModule, AuthModule, QueueModule, ScheduleModule, ConfigModule, FormModule],
   controllers: [AppController],
   providers: [AppService],
 })
