@@ -61,6 +61,12 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/auth/me", "||", "true"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
 
   worker:
     build:

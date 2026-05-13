@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { API_URL } from '../api';
+import { apiFetch, apiJson } from '../api';
 import Spinner from '../components/Spinner';
 import Button from '../components/Button';
 import './ProfessorFormPage.css';
@@ -12,8 +12,7 @@ export default function ProfessorFormPage({ token }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API_URL}/api/form/${token}`)
-      .then(r => r.json())
+    apiJson(`/api/form/${token}`)
       .then(data => {
         setFormData(data);
         if (!data.already_answered && data.slots) {
@@ -50,7 +49,7 @@ export default function ProfessorFormPage({ token }) {
       preferencia: data.preferencia,
     }));
     try {
-      const res = await fetch(`${API_URL}/api/form/${token}/submit`, {
+      const res = await apiFetch(`/api/form/${token}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ disponibilidade }),

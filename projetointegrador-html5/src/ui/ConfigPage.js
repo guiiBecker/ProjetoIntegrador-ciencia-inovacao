@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API_URL } from '../api';
+import { apiFetch, apiJson } from '../api';
 import TabBar from '../components/TabBar';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
@@ -34,12 +34,12 @@ export default function ConfigPage() {
   const loadAll = useCallback(async () => {
     try {
       const [t, p, pr, d, tu, td] = await Promise.all([
-        fetch(`${API_URL}/api/config/turnos`).then(r => r.json()),
-        fetch(`${API_URL}/api/config/periodos`).then(r => r.json()),
-        fetch(`${API_URL}/api/config/professores`).then(r => r.json()),
-        fetch(`${API_URL}/api/config/disciplinas`).then(r => r.json()),
-        fetch(`${API_URL}/api/config/turmas`).then(r => r.json()),
-        fetch(`${API_URL}/api/config/turma-disciplinas`).then(r => r.json()),
+        apiJson('/api/config/turnos'),
+        apiJson('/api/config/periodos'),
+        apiJson('/api/config/professores'),
+        apiJson('/api/config/disciplinas'),
+        apiJson('/api/config/turmas'),
+        apiJson('/api/config/turma-disciplinas'),
       ]);
       setTurnos(t); setPeriodos(p); setProfessores(pr); setDisciplinas(d); setTurmas(tu); setTurmaDisciplinas(td);
     } catch (err) { console.error(err); }
@@ -52,7 +52,7 @@ export default function ConfigPage() {
   const handleAddPeriodo = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/config/periodos`, {
+      const res = await apiFetch('/api/config/periodos', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...periodoForm, numero: Number(periodoForm.numero), turno_id: Number(periodoForm.turno_id) }),
       });
@@ -65,14 +65,14 @@ export default function ConfigPage() {
 
   const handleDeletePeriodo = async (id) => {
     try {
-      await fetch(`${API_URL}/api/config/periodos/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/config/periodos/${id}`, { method: 'DELETE' });
       loadAll();
     } catch (err) { showMsg('Erro ao remover'); }
   };
 
   const handleRegenerateSlots = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/config/periodos/regenerar-slots`, { method: 'POST' });
+      const res = await apiFetch('/api/config/periodos/regenerar-slots', { method: 'POST' });
       const data = await res.json();
       showMsg(`Time slots regenerados: ${data.count} criados`);
     } catch (err) { showMsg('Erro ao regenerar'); }
@@ -81,7 +81,7 @@ export default function ConfigPage() {
   const handleAddProfessor = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/config/professores`, {
+      const res = await apiFetch('/api/config/professores', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...profForm, carga_horaria_max: Number(profForm.carga_horaria_max) }),
       });
@@ -94,7 +94,7 @@ export default function ConfigPage() {
 
   const handleDeleteProfessor = async (id) => {
     try {
-      await fetch(`${API_URL}/api/config/professores/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/config/professores/${id}`, { method: 'DELETE' });
       loadAll();
     } catch (err) { showMsg('Erro ao remover'); }
   };
@@ -102,7 +102,7 @@ export default function ConfigPage() {
   const handleAddDisciplina = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/config/disciplinas`, {
+      const res = await apiFetch('/api/config/disciplinas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...discForm, peso: Number(discForm.peso) }),
       });
@@ -115,7 +115,7 @@ export default function ConfigPage() {
 
   const handleDeleteDisciplina = async (id) => {
     try {
-      await fetch(`${API_URL}/api/config/disciplinas/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/config/disciplinas/${id}`, { method: 'DELETE' });
       loadAll();
     } catch (err) { showMsg('Erro ao remover'); }
   };
@@ -123,7 +123,7 @@ export default function ConfigPage() {
   const handleAddTurma = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/config/turmas`, {
+      const res = await apiFetch('/api/config/turmas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...turmaForm, ano_letivo: Number(turmaForm.ano_letivo), turno_id: Number(turmaForm.turno_id) }),
       });
@@ -136,7 +136,7 @@ export default function ConfigPage() {
 
   const handleDeleteTurma = async (id) => {
     try {
-      await fetch(`${API_URL}/api/config/turmas/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/config/turmas/${id}`, { method: 'DELETE' });
       loadAll();
     } catch (err) { showMsg('Erro ao remover'); }
   };
@@ -144,7 +144,7 @@ export default function ConfigPage() {
   const handleAddTD = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/config/turma-disciplinas`, {
+      const res = await apiFetch('/api/config/turma-disciplinas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           turma_id: Number(tdForm.turma_id),
@@ -163,7 +163,7 @@ export default function ConfigPage() {
 
   const handleDeleteTD = async (id) => {
     try {
-      await fetch(`${API_URL}/api/config/turma-disciplinas/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/config/turma-disciplinas/${id}`, { method: 'DELETE' });
       loadAll();
     } catch (err) { showMsg('Erro ao remover'); }
   };
