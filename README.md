@@ -113,6 +113,19 @@ Dispara a geracao automatica de 3 opcoes de grade. O usuario pode:
 - Editar movendo aulas entre slots (drag & drop por clique)
 - Confirmar a grade final (salva no banco)
 
+### Login e Perfis
+O sistema agora possui autenticação por usuario com dois perfis:
+- **Administrador**: acesso total ao sistema, incluindo configuracao, geracao de grade e cadastro de usuarios.
+- **Usuario**: acesso somente leitura para visualizar as grades confirmadas.
+
+O primeiro administrador pode ser criado automaticamente na inicialização do backend quando a tabela de usuarios estiver vazia. Configure estas variaveis em `projetointegrador-web/.env`:
+- `INITIAL_ADMIN_NAME`
+- `INITIAL_ADMIN_EMAIL`
+- `INITIAL_ADMIN_PASSWORD`
+- `AUTH_SECRET`
+
+Depois do login, o frontend separa o acesso por rota e envia a sessao via cookie httpOnly para o backend.
+
 ## API
 
 ### Config (CRUD)

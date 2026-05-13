@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API_URL } from '../api';
+import { apiFetch, apiJson } from '../api';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Toast from '../components/Toast';
@@ -14,8 +14,8 @@ export default function ProfessoresPage() {
   const loadData = useCallback(async () => {
     try {
       const [profs, lks] = await Promise.all([
-        fetch(`${API_URL}/api/config/professores`).then(r => r.json()),
-        fetch(`${API_URL}/api/form/links`).then(r => r.json()),
+        apiJson('/api/config/professores'),
+        apiJson('/api/form/links'),
       ]);
       setProfessores(profs);
       setLinks(lks);
@@ -28,7 +28,7 @@ export default function ProfessoresPage() {
 
   const handleGenerate = async (profId) => {
     try {
-      const res = await fetch(`${API_URL}/api/form/generate/${profId}`, { method: 'POST' });
+      const res = await apiFetch(`/api/form/generate/${profId}`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) { showMsg(data.message || 'Erro'); return; }
       showMsg('Link gerado com sucesso!');

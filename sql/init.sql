@@ -33,6 +33,20 @@ CREATE TABLE professor (
 );
 
 -- =========================
+-- USUARIO DO SISTEMA
+-- =========================
+CREATE TABLE app_user (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
+    atualizado_em TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =========================
 -- DISCIPLINA
 -- =========================
 CREATE TABLE disciplina (
