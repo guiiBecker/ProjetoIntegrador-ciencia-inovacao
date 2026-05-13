@@ -67,33 +67,68 @@ export default function GradePage() {
     } catch (err) { console.error(err); }
   };
 
+  const isProfessorUnavailable = useCallback((professorId, diaId, periodoNum) => {
+    const list = activeRequest?.professorAvailability?.[String(professorId)] || [];
+    return list.some((s) => s.dia_id === diaId && s.periodo_numero === periodoNum);
+  }, [activeRequest]);
+
   const handleCellClick = async (cell, diaId, periodoNum, turmaId) => {
     setEditError('');
     if (cell) {
-      if (selectedItem && selectedItem.item_id === cell.item_id) { setSelectedItem(null); }
-      else { setSelectedItem(cell); }
-    } else if (selectedItem && selectedItem.turma_id === turmaId) {
+      if (!selectedItem) { setSelectedItem(cell); return; }
+      if (selectedItem.item_id === cell.item_id) { setSelectedItem(null); return; }
+      if (selectedItem.turma_id !== turmaId) {
+        setEditError('So e possivel trocar aulas dentro da mesma turma');
+        setSelectedItem(null);
+        return;
+      }
+      if (isProfessorUnavailable(selectedItem.professor_id, cell.dia_id, cell.periodo_numero)
+        || isProfessorUnavailable(cell.professor_id, selectedItem.dia_id, selectedItem.periodo_numero)) {
+        setEditError('Professor nao disponivel no horario destino');
+        setSelectedItem(null);
+        return;
+      }
       try {
-        const selectedOption = activeRequest.options.find((o) => o.selected);
-        if (!selectedOption) return;
-        let targetSlotId = null;
-        for (const opt of activeRequest.options) {
-          for (const item of opt.items) {
-            if (item.dia_id === diaId && item.periodo_numero === periodoNum) { targetSlotId = item.time_slot_id; break; }
-          }
-          if (targetSlotId) break;
-        }
-        if (!targetSlotId) { setEditError('Nao foi possivel identificar o horario de destino'); setSelectedItem(null); return; }
-        const res = await apiFetch(`/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ timeSlotId: targetSlotId }),
+        const res = await apiFetch(`/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}/swap/${cell.item_id}`, {
+          method: 'POST',
         });
-        const data = await res.json();
-        if (!res.ok) { setEditError(data.message || 'Erro ao mover aula'); }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { setEditError(data.message || 'Erro ao trocar aulas'); }
         else { await fetchDetail(activeRequest.id); }
-      } catch (err) { setEditError('Erro de conexao ao mover aula'); }
+      } catch (err) { setEditError('Erro de conexao ao trocar aulas'); }
       setSelectedItem(null);
+      return;
     }
+    if (!selectedItem) return;
+    if (selectedItem.turma_id !== turmaId) {
+      setEditError('So e possivel mover aulas dentro da mesma turma');
+      setSelectedItem(null);
+      return;
+    }
+    if (!diaId || !periodoNum) {
+      setEditError('Nao foi possivel identificar o horario de destino');
+      setSelectedItem(null);
+      return;
+    }
+    if (selectedItem.dia_id === diaId && selectedItem.periodo_numero === periodoNum) {
+      setSelectedItem(null);
+      return;
+    }
+    if (isProfessorUnavailable(selectedItem.professor_id, diaId, periodoNum)) {
+      setEditError('Professor nao disponivel neste horario');
+      setSelectedItem(null);
+      return;
+    }
+    try {
+      const res = await apiFetch(`/api/schedule/${activeRequest.id}/items/${selectedItem.item_id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diaId, periodoNumero: periodoNum }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setEditError(data.message || 'Erro ao mover aula'); }
+      else { await fetchDetail(activeRequest.id); }
+    } catch (err) { setEditError('Erro de conexao ao mover aula'); }
+    setSelectedItem(null);
   };
 
   const handleConfirm = async () => {
@@ -148,7 +183,12 @@ export default function GradePage() {
               {activeRequest.options.map(opt => (
                 <OptionCard key={opt.id} option={opt} onSelect={handleSelect}
                   isSelected={opt.selected} editable={!isConfirmed && opt.selected}
-                  selectedItem={selectedItem} onCellClick={handleCellClick} isConfirmed={isConfirmed} />
+                  selectedItem={selectedItem} onCellClick={handleCellClick}
+                  onCellDragStart={(cell) => { setEditError(''); setSelectedItem(cell); }}
+                  onCellDrop={handleCellClick}
+                  onCellDragEnd={() => { setSelectedItem(null); }}
+                  professorAvailability={activeRequest.professorAvailability}
+                  isConfirmed={isConfirmed} />
               ))}
             </div>
           )}

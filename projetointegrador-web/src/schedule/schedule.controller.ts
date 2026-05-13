@@ -90,18 +90,42 @@ export class ScheduleController {
   async updateItem(
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
-    @Body() body: { timeSlotId: number },
+    @Body() body: { timeSlotId?: number; diaId?: number; periodoNumero?: number },
   ): Promise<{ success: boolean; error?: string }> {
-    if (!body.timeSlotId) {
+    const hasSlot = !!body.timeSlotId;
+    const hasCoords = !!body.diaId && !!body.periodoNumero;
+    if (!hasSlot && !hasCoords) {
       throw new HttpException(
-        'timeSlotId is required',
+        'timeSlotId or (diaId, periodoNumero) is required',
         HttpStatus.BAD_REQUEST,
       );
     }
-    const result = await this.scheduleService.updateItem(id, itemId, body.timeSlotId);
+    const result = await this.scheduleService.updateItem(
+      id,
+      itemId,
+      body.timeSlotId,
+      body.diaId,
+      body.periodoNumero,
+    );
     if (!result.success) {
       throw new HttpException(
         result.error || 'Erro ao atualizar item',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return { success: true };
+  }
+
+  @Post(':id/items/:itemA/swap/:itemB')
+  async swapItems(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemA', ParseIntPipe) itemA: number,
+    @Param('itemB', ParseIntPipe) itemB: number,
+  ): Promise<{ success: boolean }> {
+    const result = await this.scheduleService.swapItems(id, itemA, itemB);
+    if (!result.success) {
+      throw new HttpException(
+        result.error || 'Erro ao trocar aulas',
         HttpStatus.BAD_REQUEST,
       );
     }
