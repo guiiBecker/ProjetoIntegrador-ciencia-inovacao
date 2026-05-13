@@ -8,7 +8,7 @@ const STRATEGY_LABELS = {
   balanced_distribution: 'Distribuicao Equilibrada',
 };
 
-export default function OptionCard({ option, onSelect, isSelected, editable, selectedItem, onCellClick, isConfirmed }) {
+export default function OptionCard({ option, onSelect, isSelected, editable, selectedItem, onCellClick, onCellDragStart, onCellDrop, onCellDragEnd, professorAvailability, isConfirmed }) {
   const turmaGroups = {};
   for (const item of option.items || []) {
     if (!turmaGroups[item.turma_nome]) {
@@ -31,7 +31,7 @@ export default function OptionCard({ option, onSelect, isSelected, editable, sel
         )}
       </div>
       {isSelected && editable && (
-        <div className="edit-hint">Clique em uma aula para move-la. Depois clique no destino vazio.</div>
+        <div className="edit-hint">Arraste uma aula para um horario vazio para mover, ou solte-a sobre outra aula da mesma turma para trocar. (Tambem funciona com clique-clique.)</div>
       )}
       <div className="timetables-row">
         {Object.entries(turmaGroups).map(([turma, { items, turmaId }]) => (
@@ -42,6 +42,10 @@ export default function OptionCard({ option, onSelect, isSelected, editable, sel
             editable={editable && isSelected}
             selectedItem={selectedItem}
             onCellClick={onCellClick}
+            onCellDragStart={onCellDragStart}
+            onCellDrop={onCellDrop}
+            onCellDragEnd={onCellDragEnd}
+            professorAvailability={professorAvailability}
             turmaId={turmaId}
           />
         ))}

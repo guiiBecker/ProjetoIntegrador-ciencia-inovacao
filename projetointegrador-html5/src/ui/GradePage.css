@@ -4,7 +4,7 @@
 
 .grade-layout {
   display: flex;
-  min-height: calc(100vh - 200px);
+  min-height: 480px;
 }
 
 .sidebar {
@@ -14,6 +14,21 @@
   border-radius: 8px 0 0 8px;
   padding: 1rem;
   flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .grade-layout {
+    flex-direction: column;
+    min-height: 0;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 8px 8px 0 0;
+    max-height: 240px;
+    overflow-y: auto;
+  }
 }
 
 .sidebar h3 {
@@ -40,8 +55,23 @@
 
 .content {
   flex: 1;
+  min-width: 0;
   padding: 1.5rem;
   overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+  .content { padding: 1rem 0.75rem; }
+}
+
+.options-header-bar h2 { font-size: 1.1rem; }
+@media (max-width: 600px) {
+  .options-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .options-header-bar h2 { font-size: 1rem; }
 }
 
 .placeholder {
