@@ -1,14 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiJson } from '../api';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Spinner from '../components/Spinner';
-import OptionCard from '../components/OptionCard';
+import { ViewByTurma, ViewByProfessor, ViewGeral } from '../components/ScheduleViews';
+
+const VIEWS = [
+  { key: 'turma', label: 'Por Turma' },
+  { key: 'professor', label: 'Por Professor' },
+  { key: 'geral', label: 'Grade Geral' },
+];
 
 export default function ScheduleViewerPage() {
   const [requests, setRequests] = useState([]);
   const [activeRequest, setActiveRequest] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('turma');
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -39,6 +46,11 @@ export default function ScheduleViewerPage() {
       setActiveRequest(null);
     }
   };
+
+  const items = useMemo(() => {
+    const selected = activeRequest?.options?.find((o) => o.selected) || activeRequest?.options?.[0];
+    return selected?.items || [];
+  }, [activeRequest]);
 
   const statusLabel = {
     confirmed: 'Confirmado',
@@ -91,17 +103,25 @@ export default function ScheduleViewerPage() {
                 <h2>Grade confirmada - Requisição #{activeRequest.id}</h2>
                 <Badge variant="selected">Somente leitura</Badge>
               </div>
-              {activeRequest.options?.map((option) => (
-                <OptionCard
-                  key={option.id}
-                  option={option}
-                  isSelected={option.selected}
-                  editable={false}
-                  selectedItem={null}
-                  onCellClick={() => {}}
-                  isConfirmed
-                />
-              ))}
+
+              <div className="view-tabs" role="tablist">
+                {VIEWS.map((v) => (
+                  <button
+                    key={v.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={view === v.key}
+                    className={`view-tab ${view === v.key ? 'active' : ''}`}
+                    onClick={() => setView(v.key)}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+
+              {view === 'turma' && <ViewByTurma items={items} />}
+              {view === 'professor' && <ViewByProfessor items={items} />}
+              {view === 'geral' && <ViewGeral items={items} />}
             </div>
           )}
         </section>
