@@ -1,0 +1,38 @@
+services:
+  backend:
+    command: sh -c "npm install && npm run start:dev"
+    volumes:
+      - ./projetointegrador-web:/app
+      - backend_node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=5001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=projetointegrador
+      - DB_USER=admin
+      - DB_PASSWORD=admin123
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  worker:
+    command: sh -c "npm install && npm run start:dev"
+    volumes:
+      - ./projetointegrador-worker:/app
+      - worker_node_modules:/app/node_modules
+
+  frontend:
+    command: sh -c "npm install && npm start"
+    volumes:
+      - ./projetointegrador-html5:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+
+volumes:
+  backend_node_modules:
+  worker_node_modules:
+  frontend_node_modules:
