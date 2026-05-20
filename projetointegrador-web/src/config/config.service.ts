@@ -118,6 +118,21 @@ export class ConfigService {
         [data.turno_id, diaIds],
       );
 
+      // Os time slots antigos (e suas disponibilidades) foram apagados em
+      // cascata. Recria a disponibilidade dos professores para os slots novos
+      // deste turno (todos disponiveis por padrao) para que a geracao de grade
+      // tenha candidatos validos; o usuario depois pode bloquear horarios.
+      await client.query(
+        `INSERT INTO professor_disponibilidade (professor_id, time_slot_id, disponivel, preferencia)
+         SELECT pr.id, ts.id, TRUE, 3
+         FROM professor pr
+         CROSS JOIN time_slot ts
+         JOIN periodo p ON ts.periodo_id = p.id
+         WHERE p.turno_id = $1 AND p.tipo = 'aula'
+         ON CONFLICT (professor_id, time_slot_id) DO NOTHING`,
+        [data.turno_id],
+      );
+
       await client.query('COMMIT');
       return { periodos: periodosCriados, slots: slotRes.rowCount ?? 0 };
     } catch (err) {
@@ -136,6 +151,15 @@ export class ConfigService {
        WHERE p.tipo = 'aula'
        ORDER BY d.id, p.id
        RETURNING id`,
+    );
+    // Recria disponibilidade (todos disponiveis) para os slots recem-criados,
+    // ja que o DELETE acima apagou as linhas antigas em cascata.
+    await this.pool.query(
+      `INSERT INTO professor_disponibilidade (professor_id, time_slot_id, disponivel, preferencia)
+       SELECT pr.id, ts.id, TRUE, 3
+       FROM professor pr
+       CROSS JOIN time_slot ts
+       ON CONFLICT (professor_id, time_slot_id) DO NOTHING`,
     );
     return result.rowCount ?? 0;
   }
