@@ -59,6 +59,35 @@ export class ConfigController {
     return { success: true };
   }
 
+  @Post('periodos/gerar')
+  async generateTurnoPeriodos(
+    @Body()
+    body: {
+      turno_id: number;
+      hora_inicio: string;
+      duracao_aula: number;
+      quantidade_aulas: number;
+      intervalo_apos_aula?: number | null;
+      duracao_intervalo?: number | null;
+      dia_ids?: number[] | null;
+    },
+  ): Promise<{ success: boolean; periodos: number; slots: number }> {
+    if (!body.turno_id || !body.hora_inicio || !body.duracao_aula || !body.quantidade_aulas) {
+      throw new HttpException(
+        'Campos obrigatorios: turno_id, hora_inicio, duracao_aula, quantidade_aulas',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (body.duracao_aula <= 0 || body.quantidade_aulas <= 0) {
+      throw new HttpException(
+        'duracao_aula e quantidade_aulas devem ser positivos',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const result = await this.configService.generateTurnoPeriodos(body);
+    return { success: true, ...result };
+  }
+
   @Post('periodos/regenerar-slots')
   async regenerateTimeSlots(): Promise<{ success: boolean; count: number }> {
     const count = await this.configService.regenerateTimeSlots();

@@ -37,6 +37,97 @@ export class ConfigService {
     return (result.rowCount ?? 0) > 0;
   }
 
+  // Gera todos os periodos de um turno a partir de regras de alto nivel
+  // (hora de inicio, duracao da aula, quantidade e intervalo) e reconstroi os
+  // time slots. Substitui os periodos pre-existentes do turno. Roda em
+  // transacao para nao deixar o turno num estado parcial.
+  async generateTurnoPeriodos(data: {
+    turno_id: number;
+    hora_inicio: string; // 'HH:MM'
+    duracao_aula: number; // minutos
+    quantidade_aulas: number;
+    intervalo_apos_aula?: number | null; // 1-based; nulo = sem intervalo
+    duracao_intervalo?: number | null; // minutos
+    dia_ids?: number[] | null; // dias da semana a gerar slots; nulo/vazio = todos
+  }): Promise<{ periodos: number; slots: number }> {
+    const toMinutes = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const toHHMM = (mins: number) => {
+      const h = Math.floor(mins / 60) % 24;
+      const m = mins % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    const hasIntervalo =
+      data.intervalo_apos_aula != null &&
+      data.intervalo_apos_aula >= 1 &&
+      data.intervalo_apos_aula < data.quantidade_aulas &&
+      data.duracao_intervalo != null &&
+      data.duracao_intervalo > 0;
+
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Dias a usar: os informados ou, se vazio/nulo, todos os dias cadastrados.
+      let diaIds = (data.dia_ids ?? []).filter((d) => Number.isInteger(d));
+      if (diaIds.length === 0) {
+        const allDias = await client.query('SELECT id FROM dia_semana ORDER BY id');
+        diaIds = allDias.rows.map((r) => r.id as number);
+      }
+
+      // Substituir os periodos do turno tambem apaga (CASCADE) os time slots
+      // antigos deste turno; os de outros turnos permanecem intactos.
+      await client.query('DELETE FROM periodo WHERE turno_id = $1', [data.turno_id]);
+
+      let cursor = toMinutes(data.hora_inicio);
+      let numero = 1;
+      let periodosCriados = 0;
+
+      for (let aula = 1; aula <= data.quantidade_aulas; aula++) {
+        const fim = cursor + data.duracao_aula;
+        await client.query(
+          `INSERT INTO periodo (numero, hora_inicio, hora_fim, tipo, turno_id)
+           VALUES ($1, $2, $3, 'aula', $4)`,
+          [numero++, toHHMM(cursor), toHHMM(fim), data.turno_id],
+        );
+        cursor = fim;
+        periodosCriados++;
+
+        if (hasIntervalo && aula === data.intervalo_apos_aula) {
+          const fimIntervalo = cursor + (data.duracao_intervalo as number);
+          await client.query(
+            `INSERT INTO periodo (numero, hora_inicio, hora_fim, tipo, turno_id)
+             VALUES ($1, $2, $3, 'intervalo', $4)`,
+            [numero++, toHHMM(cursor), toHHMM(fimIntervalo), data.turno_id],
+          );
+          cursor = fimIntervalo;
+          periodosCriados++;
+        }
+      }
+
+      // Gera os slots apenas para este turno e apenas para os dias marcados.
+      const slotRes = await client.query(
+        `INSERT INTO time_slot (dia_id, periodo_id)
+         SELECT d.id, p.id FROM dia_semana d CROSS JOIN periodo p
+         WHERE p.turno_id = $1 AND p.tipo = 'aula' AND d.id = ANY($2::int[])
+         ORDER BY d.id, p.id
+         RETURNING id`,
+        [data.turno_id, diaIds],
+      );
+
+      await client.query('COMMIT');
+      return { periodos: periodosCriados, slots: slotRes.rowCount ?? 0 };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   async regenerateTimeSlots(): Promise<number> {
     await this.pool.query('DELETE FROM time_slot');
     const result = await this.pool.query(

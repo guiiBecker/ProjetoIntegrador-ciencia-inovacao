@@ -17,6 +17,7 @@ const TABS = [
 
 export default function ConfigPage() {
   const [turnos, setTurnos] = useState([]);
+  const [dias, setDias] = useState([]);
   const [periodos, setPeriodos] = useState([]);
   const [professores, setProfessores] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
@@ -26,6 +27,7 @@ export default function ConfigPage() {
   const [activeTab, setActiveTab] = useState('periodos');
 
   const [periodoForm, setPeriodoForm] = useState({ numero: '', hora_inicio: '', hora_fim: '', tipo: 'aula', turno_id: '' });
+  const [turnoForms, setTurnoForms] = useState({}); // por turno_id: regras de geracao
   const [profForm, setProfForm] = useState({ nome: '', email: '', carga_horaria_max: 40 });
   const [discForm, setDiscForm] = useState({ nome: '', sigla: '', peso: 1 });
   const [turmaForm, setTurmaForm] = useState({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '' });
@@ -33,21 +35,55 @@ export default function ConfigPage() {
 
   const loadAll = useCallback(async () => {
     try {
-      const [t, p, pr, d, tu, td] = await Promise.all([
+      const [t, dia, p, pr, d, tu, td] = await Promise.all([
         apiJson('/api/config/turnos'),
+        apiJson('/api/config/dias'),
         apiJson('/api/config/periodos'),
         apiJson('/api/config/professores'),
         apiJson('/api/config/disciplinas'),
         apiJson('/api/config/turmas'),
         apiJson('/api/config/turma-disciplinas'),
       ]);
-      setTurnos(t); setPeriodos(p); setProfessores(pr); setDisciplinas(d); setTurmas(tu); setTurmaDisciplinas(td);
+      setTurnos(t); setDias(dia); setPeriodos(p); setProfessores(pr); setDisciplinas(d); setTurmas(tu); setTurmaDisciplinas(td);
     } catch (err) { console.error(err); }
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Garante uma linha de formulario com defaults para cada turno carregado.
+  // Por padrao, todos os dias da semana ficam marcados.
+  useEffect(() => {
+    const allDiaIds = dias.map(d => d.id);
+    setTurnoForms(prev => {
+      const next = { ...prev };
+      for (const t of turnos) {
+        if (!next[t.id]) {
+          next[t.id] = { hora_inicio: '', duracao_aula: 50, quantidade_aulas: 5, intervalo_apos_aula: '', duracao_intervalo: 20, dia_ids: allDiaIds };
+        } else if (next[t.id].dia_ids === undefined && allDiaIds.length > 0) {
+          next[t.id] = { ...next[t.id], dia_ids: allDiaIds };
+        }
+      }
+      return next;
+    });
+  }, [turnos, dias]);
+
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 3000); };
+
+  const setTurnoField = (turnoId, field, value) => {
+    setTurnoForms(prev => ({ ...prev, [turnoId]: { ...prev[turnoId], [field]: value } }));
+  };
+
+  const toggleTurnoDia = (turnoId, diaId) => {
+    setTurnoForms(prev => {
+      const cur = prev[turnoId] || {};
+      const set = new Set(cur.dia_ids || []);
+      if (set.has(diaId)) set.delete(diaId); else set.add(diaId);
+      return { ...prev, [turnoId]: { ...cur, dia_ids: Array.from(set).sort((a, b) => a - b) } };
+    });
+  };
+
+  // Conta quantos periodos de aula um turno ja possui (mostrado na tabela).
+  const aulasDoTurno = (turnoId) => periodos.filter(p => p.turno_id === turnoId && p.tipo === 'aula').length;
 
   const handleAddPeriodo = async (e) => {
     e.preventDefault();
@@ -59,6 +95,30 @@ export default function ConfigPage() {
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
       setPeriodoForm({ numero: '', hora_inicio: '', hora_fim: '', tipo: 'aula', turno_id: '' });
       showMsg('Periodo adicionado!');
+      loadAll();
+    } catch (err) { showMsg('Erro de conexao'); }
+  };
+
+  const handleGerarTurno = async (turnoId) => {
+    const f = turnoForms[turnoId];
+    if (!f || !f.hora_inicio) { showMsg('Informe a hora do 1o periodo.'); return; }
+    if (!f.dia_ids || f.dia_ids.length === 0) { showMsg('Selecione ao menos um dia.'); return; }
+    try {
+      const res = await apiFetch('/api/config/periodos/gerar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          turno_id: Number(turnoId),
+          hora_inicio: f.hora_inicio,
+          duracao_aula: Number(f.duracao_aula),
+          quantidade_aulas: Number(f.quantidade_aulas),
+          intervalo_apos_aula: f.intervalo_apos_aula ? Number(f.intervalo_apos_aula) : null,
+          duracao_intervalo: f.duracao_intervalo ? Number(f.duracao_intervalo) : null,
+          dia_ids: f.dia_ids,
+        }),
+      });
+      if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
+      const d = await res.json();
+      showMsg(`Gerados ${d.periodos} periodos e ${d.slots} time slots.`);
       loadAll();
     } catch (err) { showMsg('Erro de conexao'); }
   };
@@ -177,26 +237,49 @@ export default function ConfigPage() {
       {activeTab === 'periodos' && (
         <div className="config-section">
           <h3>Horarios da Escola (Periodos)</h3>
-          <p className="config-hint">Configure os horarios de aula, intervalo e periodos extras para cada turno.</p>
-          <form className="config-form" onSubmit={handleAddPeriodo}>
-            <select value={periodoForm.turno_id} onChange={e => setPeriodoForm({...periodoForm, turno_id: e.target.value})} required>
-              <option value="">Turno...</option>
-              {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </select>
-            <input type="number" placeholder="Numero" value={periodoForm.numero}
-              onChange={e => setPeriodoForm({...periodoForm, numero: e.target.value})} required min="1" />
-            <input type="time" value={periodoForm.hora_inicio}
-              onChange={e => setPeriodoForm({...periodoForm, hora_inicio: e.target.value})} required />
-            <input type="time" value={periodoForm.hora_fim}
-              onChange={e => setPeriodoForm({...periodoForm, hora_fim: e.target.value})} required />
-            <select value={periodoForm.tipo} onChange={e => setPeriodoForm({...periodoForm, tipo: e.target.value})}>
-              <option value="aula">Aula</option>
-              <option value="intervalo">Intervalo</option>
-              <option value="extra">Extra</option>
-            </select>
-            <Button type="submit">Adicionar</Button>
-          </form>
-          <Button variant="warning" onClick={handleRegenerateSlots} style={{ marginBottom: '1rem' }}>Regenerar Time Slots</Button>
+          <p className="config-hint">Para cada turno, marque os dias da semana, defina a hora do 1o periodo e clique em Gerar. Os horarios sao calculados e os time slots criados apenas para os dias marcados. Gerar substitui os periodos existentes do turno.</p>
+
+          <h4>Turnos</h4>
+          <DataTable
+            headers={['Turno', 'Aulas hoje', '1o inicio', 'Aulas', 'Min/aula', 'Interv. apos', 'Min interv.', 'Dias', '']}
+            rows={turnos}
+            emptyText="Nenhum turno"
+          >
+            {turnos.map(t => {
+              const f = turnoForms[t.id] || {};
+              const selDias = f.dia_ids || [];
+              return (
+                <tr key={t.id}>
+                  <td>{t.nome}</td>
+                  <td>{aulasDoTurno(t.id)}</td>
+                  <td><input type="time" value={f.hora_inicio || ''}
+                    onChange={e => setTurnoField(t.id, 'hora_inicio', e.target.value)} /></td>
+                  <td><input type="number" min="1" style={{ width: '4rem' }} value={f.quantidade_aulas ?? ''}
+                    onChange={e => setTurnoField(t.id, 'quantidade_aulas', e.target.value)} /></td>
+                  <td><input type="number" min="1" style={{ width: '4rem' }} value={f.duracao_aula ?? ''}
+                    onChange={e => setTurnoField(t.id, 'duracao_aula', e.target.value)} /></td>
+                  <td><input type="number" min="1" style={{ width: '4rem' }} placeholder="-" value={f.intervalo_apos_aula ?? ''}
+                    onChange={e => setTurnoField(t.id, 'intervalo_apos_aula', e.target.value)} /></td>
+                  <td><input type="number" min="1" style={{ width: '4rem' }} value={f.duracao_intervalo ?? ''}
+                    onChange={e => setTurnoField(t.id, 'duracao_intervalo', e.target.value)} /></td>
+                  <td>
+                    <div className="dias-check">
+                      {dias.map(d => (
+                        <label key={d.id} className="dia-check">
+                          <input type="checkbox" checked={selDias.includes(d.id)}
+                            onChange={() => toggleTurnoDia(t.id, d.id)} />
+                          {d.nome.slice(0, 3)}
+                        </label>
+                      ))}
+                    </div>
+                  </td>
+                  <td><Button onClick={() => handleGerarTurno(t.id)}>Gerar</Button></td>
+                </tr>
+              );
+            })}
+          </DataTable>
+
+          <h4>Periodos cadastrados</h4>
           <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos} emptyText="Nenhum periodo cadastrado">
             {periodos.map(p => (
               <tr key={p.id} className={p.tipo !== 'aula' ? 'row-intervalo' : ''}>
@@ -209,6 +292,29 @@ export default function ConfigPage() {
               </tr>
             ))}
           </DataTable>
+
+          <details className="periodos-avancado">
+            <summary>Ajuste fino (adicionar periodo manual / regenerar slots)</summary>
+            <form className="config-form" onSubmit={handleAddPeriodo}>
+              <select value={periodoForm.turno_id} onChange={e => setPeriodoForm({...periodoForm, turno_id: e.target.value})} required>
+                <option value="">Turno...</option>
+                {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>
+              <input type="number" placeholder="Numero" value={periodoForm.numero}
+                onChange={e => setPeriodoForm({...periodoForm, numero: e.target.value})} required min="1" />
+              <input type="time" value={periodoForm.hora_inicio}
+                onChange={e => setPeriodoForm({...periodoForm, hora_inicio: e.target.value})} required />
+              <input type="time" value={periodoForm.hora_fim}
+                onChange={e => setPeriodoForm({...periodoForm, hora_fim: e.target.value})} required />
+              <select value={periodoForm.tipo} onChange={e => setPeriodoForm({...periodoForm, tipo: e.target.value})}>
+                <option value="aula">Aula</option>
+                <option value="intervalo">Intervalo</option>
+                <option value="extra">Extra</option>
+              </select>
+              <Button type="submit">Adicionar</Button>
+            </form>
+            <Button variant="warning" onClick={handleRegenerateSlots}>Regenerar Time Slots</Button>
+          </details>
         </div>
       )}
 
