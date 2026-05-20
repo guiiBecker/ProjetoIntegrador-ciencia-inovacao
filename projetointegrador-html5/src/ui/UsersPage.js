@@ -4,22 +4,32 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Toast from '../components/Toast';
 import DataTable from '../components/DataTable';
+import PaginationControls from '../components/PaginationControls';
+import { normalizePaginatedResponse } from '../utils/pagination';
+
+const DEFAULT_PAGE_LIMIT = 20;
 
 export default function UsersPage() {
-  const [users, setUsers] = useState([]);
+  const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
+  const [usersPage, setUsersPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [msg, setMsg] = useState('');
   const [form, setForm] = useState({ nome: '', email: '', password: '', role: 'user' });
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (page = 1) => {
     try {
-      const data = await apiJson('/api/auth/users');
-      setUsers(data);
+      const data = await apiJson(`/api/auth/users?page=${page}&limit=${pageLimit}`);
+      setUsersPage(normalizePaginatedResponse(data, pageLimit));
     } catch (err) {
       setMsg(err.message || 'Erro ao carregar usuarios');
     }
-  }, []);
+  }, [pageLimit]);
 
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+  useEffect(() => { loadUsers(1); }, [loadUsers]);
+
+  const handleChangeLimit = (newLimit) => {
+    setPageLimit(newLimit);
+    setUsersPage((current) => ({ ...current, page: 1, limit: newLimit }));
+  };
 
   const showMsg = (text) => {
     setMsg(text);
@@ -29,14 +39,14 @@ export default function UsersPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const data = await apiJson('/api/auth/users', {
+      await apiJson('/api/auth/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      setUsers((prev) => [data.user, ...prev]);
       setForm({ nome: '', email: '', password: '', role: 'user' });
       showMsg('Usuario criado com sucesso');
+      loadUsers(usersPage.page);
     } catch (err) {
       showMsg(err.message || 'Erro ao criar usuario');
     }
@@ -48,10 +58,22 @@ export default function UsersPage() {
     }
     try {
       await apiJson(`/api/auth/users/${userId}`, { method: 'DELETE' });
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
       showMsg('Usuario deletado com sucesso');
+      loadUsers(usersPage.page);
     } catch (err) {
       showMsg(err.message || 'Erro ao deletar usuario');
+    }
+  };
+
+  const handlePrevious = () => {
+    if (usersPage.page > 1) {
+      loadUsers(usersPage.page - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (usersPage.page < usersPage.totalPages) {
+      loadUsers(usersPage.page + 1);
     }
   };
 
@@ -94,8 +116,8 @@ export default function UsersPage() {
         <Button type="submit">Criar usuario</Button>
       </form>
 
-      <DataTable headers={['Nome', 'E-mail', 'Perfil', 'Status', 'Ação']} rows={users} emptyText="Nenhum usuario cadastrado">
-        {users.map((user) => (
+      <DataTable headers={['Nome', 'E-mail', 'Perfil', 'Status', 'Ação']} rows={usersPage.items} emptyText="Nenhum usuario cadastrado">
+        {usersPage.items.map((user) => (
           <tr key={user.id}>
             <td>{user.nome}</td>
             <td>{user.email}</td>
@@ -121,6 +143,17 @@ export default function UsersPage() {
           </tr>
         ))}
       </DataTable>
+
+      <PaginationControls
+        label="Usuários"
+        page={usersPage.page}
+        totalPages={usersPage.totalPages}
+        total={usersPage.total}
+        limit={usersPage.limit}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onLimitChange={handleChangeLimit}
+      />
     </div>
   );
 }
