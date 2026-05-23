@@ -1,15 +1,50 @@
 .app-header {
-  background: linear-gradient(135deg, #101322 0%, #1a1a2e 50%, #132238 100%);
-  color: #fff;
-  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, var(--color-neutral-900) 0%, var(--color-neutral-800) 100%);
+  color: white;
+  padding: 1.25rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.app-header p {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+  margin: 0;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
   gap: 1rem;
 }
-.app-header h1 { font-size: 1.5rem; }
-.app-header p { font-size: 0.85rem; opacity: 0.72; margin-top: 0.25rem; }
-.app-header-actions { display: flex; align-items: center; gap: 0.75rem; }
-.app-session-info { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
-.app-session-name { font-weight: 700; }
-.app-session-role { font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.app-session-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  text-align: right;
+}
+
+.app-session-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.app-session-role {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

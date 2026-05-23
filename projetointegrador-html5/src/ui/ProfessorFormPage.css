@@ -1,112 +1,168 @@
 .form-page {
-  max-width: 800px;
+  max-width: 900px;
   margin: 2rem auto;
   padding: 2rem;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-neutral-200);
 }
 
 .form-header {
   text-align: center;
   margin-bottom: 2rem;
 }
-.form-header h2 { color: #1a1a2e; margin-bottom: 0.5rem; }
-.form-header p { color: #666; font-size: 0.9rem; }
+
+.form-header h2 {
+  color: var(--color-neutral-900);
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.form-header p {
+  color: var(--color-neutral-600);
+  font-size: 0.95rem;
+}
 
 .form-legend {
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
 }
+
 .legend-available {
-  background: #c8e6c9;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  background: var(--color-success-light);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #1b5e20;
+  color: var(--color-success);
 }
+
 .legend-unavailable {
-  background: #ffcdd2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  background: var(--color-danger-light);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #b71c1c;
+  color: var(--color-danger);
 }
 
 .form-turno-section {
   margin-bottom: 2rem;
 }
+
 .form-turno-section h3 {
-  font-size: 1rem;
-  color: #333;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e0e0e0;
+  font-size: 1.1rem;
+  color: var(--color-neutral-900);
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--color-neutral-200);
+  font-weight: 600;
 }
 
 .form-grid {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
+
 .form-grid th {
-  background: #1a1a2e;
-  color: #fff;
-  padding: 0.5rem;
-  font-size: 0.78rem;
+  background: var(--color-neutral-900);
+  color: white;
+  padding: 0.75rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
+
 .form-grid td {
-  border: 1px solid #e0e0e0;
-  padding: 0.4rem;
+  border: 1px solid var(--color-neutral-200);
+  padding: 0.5rem;
   text-align: center;
 }
 
 .form-slot-cell {
   cursor: pointer;
-  transition: background 0.15s;
-  min-width: 70px;
+  transition: background 0.2s;
+  min-width: 80px;
+  font-weight: 500;
 }
+
 .slot-available {
-  background: #e8f5e9;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
-.slot-available:hover { background: #c8e6c9; }
+
+.slot-available:hover {
+  background: var(--color-success);
+  color: white;
+}
+
 .slot-unavailable {
-  background: #ffebee;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
-.slot-unavailable:hover { background: #ffcdd2; }
+
+.slot-unavailable:hover {
+  background: var(--color-danger);
+  color: white;
+}
 
 .slot-status {
   font-weight: 700;
-  font-size: 0.8rem;
-  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
 }
 
 .pref-select {
-  width: 40px;
-  font-size: 0.75rem;
-  padding: 0.1rem;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  width: 50px;
+  font-size: 0.85rem;
+  padding: 0.4rem;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
   text-align: center;
+  transition: border-color 0.2s;
+}
+
+.pref-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .form-success {
   text-align: center;
   padding: 3rem 1rem;
 }
-.form-success h2 { color: #2e7d32; margin-bottom: 0.75rem; }
-.form-success p { color: #555; }
+
+.form-success h2 {
+  color: var(--color-success);
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.form-success p {
+  color: var(--color-neutral-700);
+  font-size: 1rem;
+}
 
 .form-error {
-  background: #ffebee;
-  color: #c62828;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  padding: 1rem;
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
   text-align: center;
+  border-left: 4px solid var(--color-danger);
+  font-weight: 500;
 }

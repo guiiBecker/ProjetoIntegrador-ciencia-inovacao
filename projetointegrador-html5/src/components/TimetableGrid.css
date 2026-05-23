@@ -3,90 +3,92 @@
   min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  background: white;
 }
 
 .turma-title {
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  color: #333;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  color: var(--color-neutral-900);
+  font-weight: 600;
 }
 
 .timetable {
   width: 100%;
   min-width: 320px;
   border-collapse: collapse;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   table-layout: fixed;
 }
+
 .timetable th,
 .timetable td {
-  border: 1px solid #e0e0e0;
-  padding: 0.35rem 0.4rem;
+  border: 1px solid var(--color-neutral-200);
+  padding: 0.5rem 0.4rem;
   text-align: center;
   word-break: break-word;
 }
+
 .timetable th {
-  background: #1a1a2e;
-  color: #fff;
+  background: var(--color-neutral-900);
+  color: white;
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .periodo-cell {
-  background: #f5f5f5;
+  background: var(--color-neutral-100);
   font-weight: 600;
   width: 56px;
-  font-size: 0.7rem;
-}
-
-@media (max-width: 600px) {
-  .timetable { font-size: 0.7rem; }
-  .timetable th,
-  .timetable td { padding: 0.25rem 0.25rem; }
-  .timetable th { font-size: 0.6rem; }
-  .periodo-cell { width: 44px; font-size: 0.65rem; }
-  .filled-cell .disc-sigla { font-size: 0.72rem; }
-  .filled-cell .prof-nome { font-size: 0.6rem; }
+  font-size: 0.75rem;
+  color: var(--color-neutral-900);
 }
 
 .filled-cell {
-  background: #e3f2fd;
+  background: var(--color-primary-light);
 }
+
 .filled-cell .disc-sigla {
   display: block;
   font-weight: 700;
-  color: #1565c0;
-  font-size: 0.8rem;
+  color: var(--color-primary-dark);
+  font-size: 0.85rem;
 }
+
 .filled-cell .prof-nome {
   display: block;
-  font-size: 0.65rem;
-  color: #666;
+  font-size: 0.7rem;
+  color: var(--color-neutral-700);
+  margin-top: 0.15rem;
 }
 
 .empty-cell {
-  color: #ccc;
+  color: var(--color-neutral-300);
 }
 
 /* Edit mode */
 .picked-up {
-  background: #fff9c4 !important;
-  outline: 2px solid #f57f17;
+  background: var(--color-warning-light) !important;
+  outline: 2px solid var(--color-warning);
   outline-offset: -2px;
 }
 
 .drop-target:hover {
-  background: #c8e6c9 !important;
-  color: #2e7d32;
+  background: var(--color-success-light) !important;
+  color: var(--color-success);
 }
 
 .swap-target {
-  outline: 2px dashed #1976d2;
+  outline: 2px dashed var(--color-primary);
   outline-offset: -2px;
 }
+
 .swap-target:hover {
-  background: #bbdefb !important;
+  background: var(--color-primary-light) !important;
 }
 
 .filled-cell[draggable="true"]:active {
@@ -95,15 +97,17 @@
 
 .prof-unavailable {
   position: relative;
-  background-color: rgba(211, 47, 47, 0.08) !important;
+  background-color: var(--color-danger-light) !important;
   background-image: repeating-linear-gradient(
     135deg,
     transparent 0,
     transparent 6px,
-    rgba(211, 47, 47, 0.18) 6px,
-    rgba(211, 47, 47, 0.18) 8px
+    var(--color-danger) 6px,
+    var(--color-danger) 8px
   );
+  opacity: 0.7;
 }
+
 .prof-unavailable::after {
   content: '';
   position: absolute;
@@ -111,11 +115,40 @@
   right: 6%;
   top: 50%;
   height: 2px;
-  background: #d32f2f;
+  background: var(--color-danger);
   transform: translateY(-1px);
   pointer-events: none;
 }
+
 .prof-unavailable.drop-target:hover,
 .prof-unavailable.swap-target:hover {
-  background-color: rgba(211, 47, 47, 0.18) !important;
+  background-color: var(--color-danger-light) !important;
+}
+
+@media (max-width: 600px) {
+  .timetable {
+    font-size: 0.7rem;
+  }
+
+  .timetable th,
+  .timetable td {
+    padding: 0.35rem 0.25rem;
+  }
+
+  .timetable th {
+    font-size: 0.65rem;
+  }
+
+  .periodo-cell {
+    width: 44px;
+    font-size: 0.65rem;
+  }
+
+  .filled-cell .disc-sigla {
+    font-size: 0.75rem;
+  }
+
+  .filled-cell .prof-nome {
+    font-size: 0.6rem;
+  }
 }
