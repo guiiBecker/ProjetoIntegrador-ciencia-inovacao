@@ -2,9 +2,10 @@
   background: white;
   border: 1px solid var(--color-neutral-200);
   border-radius: var(--radius-lg);
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   overflow: hidden;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .option-card:hover {
@@ -22,16 +23,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem 1.75rem;
   background: var(--color-neutral-50);
   border-bottom: 1px solid var(--color-neutral-200);
+  gap: 1rem;
 }
 
 .option-header h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
   margin: 0;
   color: var(--color-neutral-900);
+  letter-spacing: -0.3px;
 }
 
 .option-header p {
@@ -41,23 +44,51 @@
 }
 
 .edit-hint {
-  font-size: 0.8rem;
-  color: var(--color-neutral-500);
-  margin: 0.5rem 1.5rem 0;
+  font-size: 0.85rem;
+  color: var(--color-neutral-600);
+  margin: 0 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-neutral-50);
+  border-left: 3px solid var(--color-primary);
   font-style: italic;
+  border-radius: 4px;
+  line-height: 1.5;
 }
 
 .timetables-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 2rem;
   padding: 1.5rem;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  min-height: auto;
 }
 
-@media (max-width: 1100px) {
+.timetables-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timetables-row::-webkit-scrollbar-track {
+  background: var(--color-neutral-100);
+  border-radius: 4px;
+}
+
+.timetables-row::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 4px;
+}
+
+.timetables-row::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
+}
+
+@media (max-width: 768px) {
   .timetables-row {
-    flex-wrap: nowrap;
-    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.25rem;
   }
 }
 

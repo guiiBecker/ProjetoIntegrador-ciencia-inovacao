@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { apiJson } from '../api';
 import Button from '../components/Button';
 import Spinner from '../components/Spinner';
+import './LoginPage.css';
 
 export default function LoginPage({ onSuccess }) {
   const [form, setForm] = useState({ email: '', password: '' });

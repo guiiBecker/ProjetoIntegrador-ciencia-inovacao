@@ -177,7 +177,6 @@ export default function ConfigPage() {
       {activeTab === 'periodos' && (
         <div className="config-section">
           <h3>Horarios da Escola (Periodos)</h3>
-          <p className="config-hint">Configure os horarios de aula, intervalo e periodos extras para cada turno.</p>
           <div className="config-form-wrapper">
             <form className="config-form" onSubmit={handleAddPeriodo}>
               <label>Turno</label>
@@ -204,7 +203,7 @@ export default function ConfigPage() {
             </form>
             <Button className="btn-warning" onClick={handleRegenerateSlots}>Regenerar Time Slots</Button>
           </div>
-          <div className="config-table-wrapper">
+          <div className="data-table-wrapper">
             <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos} emptyText="Nenhum periodo cadastrado">
             {periodos.map(p => (
               <tr key={p.id} className={p.tipo !== 'aula' ? 'row-intervalo' : ''}>
@@ -238,7 +237,7 @@ export default function ConfigPage() {
               <Button type="submit">Adicionar</Button>
             </form>
           </div>
-          <div className="config-table-wrapper">
+          <div className="data-table-wrapper">
             <DataTable headers={['Nome', 'Email', 'Carga Max', '']} rows={professores} emptyText="Nenhum professor cadastrado">
             {professores.map(p => (
               <tr key={p.id}>
@@ -270,7 +269,7 @@ export default function ConfigPage() {
               <Button type="submit">Adicionar</Button>
             </form>
           </div>
-          <div className="config-table-wrapper">
+          <div className="data-table-wrapper">
             <DataTable headers={['Nome', 'Sigla', 'Peso', '']} rows={disciplinas} emptyText="Nenhuma disciplina cadastrada">
             {disciplinas.map(d => (
               <tr key={d.id}>
@@ -307,7 +306,7 @@ export default function ConfigPage() {
               <Button type="submit">Adicionar</Button>
             </form>
           </div>
-          <div className="config-table-wrapper">
+          <div className="data-table-wrapper">
             <DataTable headers={['Nome', 'Serie', 'Ano', 'Turno', '']} rows={turmas} emptyText="Nenhuma turma cadastrada">
             {turmas.map(t => (
               <tr key={t.id}>
@@ -352,7 +351,7 @@ export default function ConfigPage() {
               <Button type="submit">Adicionar</Button>
             </form>
           </div>
-          <div className="config-table-wrapper">
+          <div className="data-table-wrapper">
             <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinas} emptyText="Nenhuma atribuicao cadastrada">
             {turmaDisciplinas.map(td => (
               <tr key={td.id}>

@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Spinner from '../components/Spinner';
 import { ViewByTurma, ViewByProfessor, ViewGeral } from '../components/ScheduleViews';
+import './ScheduleViewerPage.css';
 
 const VIEWS = [
   { key: 'turma', label: 'Por Turma' },
@@ -59,8 +60,8 @@ export default function ScheduleViewerPage() {
   };
 
   return (
-    <div className="page-card">
-      <div className="section-header">
+    <div className="schedule-viewer-page">
+      <div className="schedule-header">
         <div>
           <h3>Horários confirmados</h3>
           <p className="config-hint">Área somente leitura para consulta das grades já aprovadas.</p>

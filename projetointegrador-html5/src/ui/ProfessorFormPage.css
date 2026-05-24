@@ -1,11 +1,13 @@
+@import './PageStyles.css';
+
 .form-page {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 2rem auto;
   padding: 2rem;
   background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-neutral-200);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
+  border: none;
 }
 
 .form-header {
@@ -14,15 +16,17 @@
 }
 
 .form-header h2 {
-  color: var(--color-neutral-900);
+  color: #1a202c;
   margin-bottom: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .form-header p {
-  color: var(--color-neutral-600);
+  color: #64748b;
   font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .form-legend {
@@ -34,21 +38,21 @@
 }
 
 .legend-available {
-  background: var(--color-success-light);
+  background: #d1fae5;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-success);
+  color: #059669;
 }
 
 .legend-unavailable {
-  background: var(--color-danger-light);
+  background: #fee2e2;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-danger);
+  color: #dc2626;
 }
 
 .form-turno-section {
@@ -56,65 +60,77 @@
 }
 
 .form-turno-section h3 {
-  font-size: 1.1rem;
-  color: var(--color-neutral-900);
+  font-size: 1.25rem;
+  color: #1a202c;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--color-neutral-200);
-  font-weight: 600;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .form-grid {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  border: 1px solid var(--color-neutral-200);
-  border-radius: var(--radius-md);
+  border: none;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
 }
 
 .form-grid th {
-  background: var(--color-neutral-900);
-  color: white;
-  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  color: #334155;
+  padding: 1rem 0.75rem;
   font-size: 0.85rem;
   text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .form-grid td {
-  border: 1px solid var(--color-neutral-200);
-  padding: 0.5rem;
+  border: 1px solid #f1f5f9;
+  padding: 0.75rem;
   text-align: center;
+  color: #475569;
+}
+
+.form-grid tr:hover {
+  background-color: #f8fafc;
+  transition: background-color 0.2s ease;
 }
 
 .form-slot-cell {
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
   min-width: 80px;
-  font-weight: 500;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.5rem;
 }
 
 .slot-available {
-  background: var(--color-success-light);
-  color: var(--color-success);
+  background: #d1fae5;
+  color: #059669;
 }
 
 .slot-available:hover {
-  background: var(--color-success);
-  color: white;
+  background: #6ee7b7;
+  color: #065f46;
+  transform: scale(1.05);
 }
 
 .slot-unavailable {
-  background: var(--color-danger-light);
-  color: var(--color-danger);
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .slot-unavailable:hover {
-  background: var(--color-danger);
-  color: white;
+  background: #fca5a5;
+  color: #991b1b;
+  transform: scale(1.05);
 }
 
 .slot-status {
@@ -126,17 +142,26 @@
 .pref-select {
   width: 50px;
   font-size: 0.85rem;
-  padding: 0.4rem;
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
   text-align: center;
-  transition: border-color 0.2s;
+  transition: all 0.3s ease;
+  background-color: white;
+  color: #1a202c;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pref-select:hover {
+  border-color: #cbd5e1;
 }
 
 .pref-select:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.05);
+  background-color: #f8fafc;
 }
 
 .form-success {
@@ -145,24 +170,25 @@
 }
 
 .form-success h2 {
-  color: var(--color-success);
+  color: #10b981;
   margin-bottom: 1rem;
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
 }
 
 .form-success p {
-  color: var(--color-neutral-700);
+  color: #475569;
   font-size: 1rem;
+  line-height: 1.6;
 }
 
 .form-error {
-  background: var(--color-danger-light);
-  color: var(--color-danger);
-  padding: 1rem;
-  border-radius: var(--radius-md);
-  margin-bottom: 1rem;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
   text-align: center;
-  border-left: 4px solid var(--color-danger);
-  font-weight: 500;
+  border-left: 4px solid #dc2626;
+  font-weight: 600;
 }
