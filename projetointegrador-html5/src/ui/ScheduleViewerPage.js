@@ -3,8 +3,12 @@ import { apiJson } from '../api';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Spinner from '../components/Spinner';
+import PaginationControls from '../components/PaginationControls';
 import { ViewByTurma, ViewByProfessor, ViewGeral } from '../components/ScheduleViews';
+import { normalizePaginatedResponse } from '../utils/pagination';
 import './ScheduleViewerPage.css';
+
+const DEFAULT_PAGE_LIMIT = 20;
 
 const VIEWS = [
   { key: 'turma', label: 'Por Turma' },

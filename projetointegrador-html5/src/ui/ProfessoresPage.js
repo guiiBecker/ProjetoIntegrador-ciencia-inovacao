@@ -5,7 +5,10 @@ import Badge from '../components/Badge';
 import Toast from '../components/Toast';
 import DataTable from '../components/DataTable';
 import TabBar from '../components/TabBar';
+import { normalizePaginatedResponse } from '../utils/pagination';
 import './ProfessoresPage.css';
+
+const DEFAULT_PAGE_LIMIT = 20;
 
 const TABS = [
   { key: 'professores', label: 'Professores' },
@@ -59,7 +62,7 @@ export default function ProfessoresPage() {
     navigator.clipboard.writeText(url).then(() => showMsg('Link copiado!')).catch(() => showMsg(url));
   };
 
-  const professorFiltrado = professores.filter(p => 
+  const professorFiltrado = professoresPage.items.filter(p =>
     p.nome.toLowerCase().includes(filtroNome.toLowerCase())
   );
 
@@ -93,7 +96,7 @@ export default function ProfessoresPage() {
           <div className="data-table-wrapper">
             <DataTable headers={['Professor', 'Email', 'Status', 'Ação']} rows={professorFiltrado} emptyText="Cadastre professores na aba Configuração primeiro">
               {professorFiltrado.map(p => {
-                const profLinks = links.filter(l => l.professor_id === p.id);
+                const profLinks = allLinks.filter(l => l.professor_id === p.id);
                 const lastLink = profLinks[0];
                 const answered = lastLink?.respondido;
                 return (
@@ -135,9 +138,9 @@ export default function ProfessoresPage() {
 
           <div className="config-section">
             <div className="data-table-wrapper">
-              {links.length > 0 ? (
-                <DataTable headers={['Professor', 'Criado em', 'Respondido', 'Link']} rows={links}>
-                  {links.map(l => (
+              {linksPage.items.length > 0 ? (
+                <DataTable headers={['Professor', 'Criado em', 'Respondido', 'Link']} rows={linksPage.items}>
+                  {linksPage.items.map(l => (
                     <tr key={l.id}>
                       <td>{l.professor_nome}</td>
                       <td>{new Date(l.criado_em).toLocaleString('pt-BR')}</td>

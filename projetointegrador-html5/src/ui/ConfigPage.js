@@ -750,8 +750,8 @@ export default function ConfigPage() {
             </form>
           </div>
           <div className="data-table-wrapper">
-            <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinas} emptyText="Nenhuma atribuicao cadastrada">
-            {turmaDisciplinas.map(td => (
+            <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinasPage.items} emptyText="Nenhuma atribuicao cadastrada">
+            {turmaDisciplinasPage.items.map(td => (
               <tr key={td.id}>
                 <td>{td.turma_nome}</td>
                 <td>{td.disciplina_nome}</td>
