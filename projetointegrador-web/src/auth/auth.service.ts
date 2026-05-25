@@ -5,6 +5,7 @@ import { DB_POOL } from '../database/database.module';
 import { Inject } from '@nestjs/common';
 import { AuthUser, CreateUserInput, LoginInput } from './auth.types';
 import { DEFAULT_SESSION_TTL_MS, PBKDF2_DIGEST, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH } from './auth.constants';
+import { PaginationParams, paginateQuery } from '../common/pagination';
 
 interface AppUserRow {
   id: number;
@@ -139,11 +140,24 @@ export class AuthService implements OnModuleInit {
     return user;
   }
 
-  async listUsers(): Promise<AuthUser[]> {
-    const result = await this.pool.query<AppUserRow>(
+  async listUsers(
+    pagination?: PaginationParams,
+  ): Promise<AuthUser[] | { items: AuthUser[]; page: number; limit: number; total: number; totalPages: number }> {
+    const result = await paginateQuery<AppUserRow>(
+      this.pool,
       'SELECT id, nome, email, senha_hash, role, ativo FROM app_user ORDER BY criado_em DESC',
+      [],
+      pagination,
     );
-    return result.rows.map((row) => this.toPublicUser(row));
+
+    if (Array.isArray(result)) {
+      return result.map((row) => this.toPublicUser(row));
+    }
+
+    return {
+      ...result,
+      items: result.items.map((row) => this.toPublicUser(row as AppUserRow)),
+    };
   }
 
   async createUser(input: CreateUserInput): Promise<AuthUser | null> {
