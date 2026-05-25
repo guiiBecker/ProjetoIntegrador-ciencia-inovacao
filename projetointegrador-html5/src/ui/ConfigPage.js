@@ -459,29 +459,35 @@ export default function ConfigPage() {
       {activeTab === 'periodos' && (
         <div className="config-section">
           <h3>Horarios da Escola (Periodos)</h3>
-          <p className="config-hint">Configure os horarios de aula, intervalo e periodos extras para cada turno.</p>
-          <form className="config-form" onSubmit={handleAddPeriodo}>
-            <select value={periodoForm.turno_id} onChange={e => setPeriodoForm({...periodoForm, turno_id: e.target.value})} required>
-              <option value="">Turno...</option>
-              {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </select>
-            <input type="number" placeholder="Numero" value={periodoForm.numero}
-              onChange={e => setPeriodoForm({...periodoForm, numero: e.target.value})} required min="1" />
-            <input type="time" value={periodoForm.hora_inicio}
-              onChange={e => setPeriodoForm({...periodoForm, hora_inicio: e.target.value})} required />
-            <input type="time" value={periodoForm.hora_fim}
-              onChange={e => setPeriodoForm({...periodoForm, hora_fim: e.target.value})} required />
-            <select value={periodoForm.tipo} onChange={e => setPeriodoForm({...periodoForm, tipo: e.target.value})}>
-              <option value="aula">Aula</option>
-              <option value="intervalo">Intervalo</option>
-              <option value="extra">Extra</option>
-            </select>
-            <Button type="submit">{editingPeriodoId ? 'Salvar edição' : 'Adicionar'}</Button>
-            {editingPeriodoId && <Button type="button" variant="warning" onClick={handleCancelPeriodoEdit}>Cancelar</Button>}
-          </form>
-          <Button variant="warning" onClick={handleRegenerateSlots} style={{ marginBottom: '1rem' }}>Regenerar Time Slots</Button>
-          <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos.items} emptyText="Nenhum periodo cadastrado">
-            {periodos.items.map(p => (
+          <div className="config-form-wrapper">
+            <form className="config-form" onSubmit={handleAddPeriodo}>
+              <label>Turno</label>
+              <select value={periodoForm.turno_id} onChange={e => setPeriodoForm({...periodoForm, turno_id: e.target.value})} required>
+                <option value="">Selecione...</option>
+                {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>
+              <label>Número</label>
+              <input type="number" placeholder="1, 2, 3..." value={periodoForm.numero}
+                onChange={e => setPeriodoForm({...periodoForm, numero: e.target.value})} required min="1" />
+              <label>Início</label>
+              <input type="time" value={periodoForm.hora_inicio}
+                onChange={e => setPeriodoForm({...periodoForm, hora_inicio: e.target.value})} required />
+              <label>Fim</label>
+              <input type="time" value={periodoForm.hora_fim}
+                onChange={e => setPeriodoForm({...periodoForm, hora_fim: e.target.value})} required />
+              <label>Tipo</label>
+              <select value={periodoForm.tipo} onChange={e => setPeriodoForm({...periodoForm, tipo: e.target.value})}>
+                <option value="aula">Aula</option>
+                <option value="intervalo">Intervalo</option>
+                <option value="extra">Extra</option>
+              </select>
+              <Button type="submit">Adicionar</Button>
+            </form>
+            <Button className="btn-warning" onClick={handleRegenerateSlots}>Regenerar Time Slots</Button>
+          </div>
+          <div className="data-table-wrapper">
+            <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos} emptyText="Nenhum periodo cadastrado">
+            {periodos.map(p => (
               <tr key={p.id} className={p.tipo !== 'aula' ? 'row-intervalo' : ''}>
                 <td>{p.turno_nome}</td>
                 <td>{p.numero}</td>
@@ -494,35 +500,31 @@ export default function ConfigPage() {
                 </td>
               </tr>
             ))}
-          </DataTable>
-          <PaginationControls
-            label="Períodos"
-            page={periodos.page}
-            totalPages={periodos.totalPages}
-            total={periodos.total}
-            limit={periodos.limit}
-            onPrevious={handlePeriodosPrevious}
-            onNext={handlePeriodosNext}
-            onLimitChange={handleChangeLimit}
-          />
+            </DataTable>
+          </div>
         </div>
       )}
 
       {activeTab === 'professores' && (
         <div className="config-section">
           <h3>Professores</h3>
-          <form className="config-form" onSubmit={handleAddProfessor}>
-            <input type="text" placeholder="Nome" value={profForm.nome}
-              onChange={e => setProfForm({...profForm, nome: e.target.value})} required />
-            <input type="email" placeholder="Email" value={profForm.email}
-              onChange={e => setProfForm({...profForm, email: e.target.value})} />
-            <input type="number" placeholder="Carga max" value={profForm.carga_horaria_max}
-              onChange={e => setProfForm({...profForm, carga_horaria_max: e.target.value})} min="1" />
-            <Button type="submit">{editingProfessorId ? 'Salvar edição' : 'Adicionar'}</Button>
-            {editingProfessorId && <Button type="button" variant="warning" onClick={handleCancelProfessorEdit}>Cancelar</Button>}
-          </form>
-          <DataTable headers={['Nome', 'Email', 'Carga Max', '']} rows={professoresPage.items} emptyText="Nenhum professor cadastrado">
-            {professoresPage.items.map(p => (
+          <div className="config-form-wrapper">
+            <form className="config-form" onSubmit={handleAddProfessor}>
+              <label>Nome</label>
+              <input type="text" placeholder="Nome completo" value={profForm.nome}
+                onChange={e => setProfForm({...profForm, nome: e.target.value})} required />
+              <label>Email</label>
+              <input type="email" placeholder="email@exemplo.com" value={profForm.email}
+                onChange={e => setProfForm({...profForm, email: e.target.value})} />
+              <label>Carga Máxima (horas)</label>
+              <input type="number" placeholder="40" value={profForm.carga_horaria_max}
+                onChange={e => setProfForm({...profForm, carga_horaria_max: e.target.value})} min="1" />
+              <Button type="submit">Adicionar</Button>
+            </form>
+          </div>
+          <div className="data-table-wrapper">
+            <DataTable headers={['Nome', 'Email', 'Carga Max', '']} rows={professores} emptyText="Nenhum professor cadastrado">
+            {professores.map(p => (
               <tr key={p.id}>
                 <td>{p.nome}</td>
                 <td>{p.email || '-'}</td>
@@ -533,35 +535,31 @@ export default function ConfigPage() {
                 </td>
               </tr>
             ))}
-          </DataTable>
-          <PaginationControls
-            label="Professores"
-            page={professoresPage.page}
-            totalPages={professoresPage.totalPages}
-            total={professoresPage.total}
-            limit={professoresPage.limit}
-            onPrevious={handleProfessoresPrevious}
-            onNext={handleProfessoresNext}
-            onLimitChange={handleChangeLimit}
-          />
+            </DataTable>
+          </div>
         </div>
       )}
 
       {activeTab === 'disciplinas' && (
         <div className="config-section">
           <h3>Disciplinas</h3>
-          <form className="config-form" onSubmit={handleAddDisciplina}>
-            <input type="text" placeholder="Nome" value={discForm.nome}
-              onChange={e => setDiscForm({...discForm, nome: e.target.value})} required />
-            <input type="text" placeholder="Sigla (ex: MAT)" value={discForm.sigla}
-              onChange={e => setDiscForm({...discForm, sigla: e.target.value})} maxLength={10} />
-            <input type="number" placeholder="Peso" value={discForm.peso}
-              onChange={e => setDiscForm({...discForm, peso: e.target.value})} min="1" />
-            <Button type="submit">{editingDisciplinaId ? 'Salvar edição' : 'Adicionar'}</Button>
-            {editingDisciplinaId && <Button type="button" variant="warning" onClick={handleCancelDisciplinaEdit}>Cancelar</Button>}
-          </form>
-          <DataTable headers={['Nome', 'Sigla', 'Peso', '']} rows={disciplinasPage.items} emptyText="Nenhuma disciplina cadastrada">
-            {disciplinasPage.items.map(d => (
+          <div className="config-form-wrapper">
+            <form className="config-form" onSubmit={handleAddDisciplina}>
+              <label>Nome</label>
+              <input type="text" placeholder="Ex: Matemática" value={discForm.nome}
+                onChange={e => setDiscForm({...discForm, nome: e.target.value})} required />
+              <label>Sigla</label>
+              <input type="text" placeholder="Ex: MAT" value={discForm.sigla}
+                onChange={e => setDiscForm({...discForm, sigla: e.target.value})} maxLength={10} />
+              <label>Peso</label>
+              <input type="number" placeholder="1" value={discForm.peso}
+                onChange={e => setDiscForm({...discForm, peso: e.target.value})} min="1" />
+              <Button type="submit">Adicionar</Button>
+            </form>
+          </div>
+          <div className="data-table-wrapper">
+            <DataTable headers={['Nome', 'Sigla', 'Peso', '']} rows={disciplinas} emptyText="Nenhuma disciplina cadastrada">
+            {disciplinas.map(d => (
               <tr key={d.id}>
                 <td>{d.nome}</td>
                 <td>{d.sigla || '-'}</td>
@@ -572,39 +570,36 @@ export default function ConfigPage() {
                 </td>
               </tr>
             ))}
-          </DataTable>
-          <PaginationControls
-            label="Disciplinas"
-            page={disciplinasPage.page}
-            totalPages={disciplinasPage.totalPages}
-            total={disciplinasPage.total}
-            limit={disciplinasPage.limit}
-            onPrevious={handleDisciplinasPrevious}
-            onNext={handleDisciplinasNext}
-            onLimitChange={handleChangeLimit}
-          />
+            </DataTable>
+          </div>
         </div>
       )}
 
       {activeTab === 'turmas' && (
         <div className="config-section">
           <h3>Turmas</h3>
-          <form className="config-form" onSubmit={handleAddTurma}>
-            <input type="text" placeholder="Nome (ex: 1A)" value={turmaForm.nome}
-              onChange={e => setTurmaForm({...turmaForm, nome: e.target.value})} required />
-            <input type="text" placeholder="Serie (ex: 1 ano)" value={turmaForm.serie}
-              onChange={e => setTurmaForm({...turmaForm, serie: e.target.value})} required />
-            <input type="number" placeholder="Ano letivo" value={turmaForm.ano_letivo}
-              onChange={e => setTurmaForm({...turmaForm, ano_letivo: e.target.value})} required />
-            <select value={turmaForm.turno_id} onChange={e => setTurmaForm({...turmaForm, turno_id: e.target.value})} required>
-              <option value="">Turno...</option>
-              {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </select>
-            <Button type="submit">{editingTurmaId ? 'Salvar edição' : 'Adicionar'}</Button>
-            {editingTurmaId && <Button type="button" variant="warning" onClick={handleCancelTurmaEdit}>Cancelar</Button>}
-          </form>
-          <DataTable headers={['Nome', 'Serie', 'Ano', 'Turno', '']} rows={turmasPage.items} emptyText="Nenhuma turma cadastrada">
-            {turmasPage.items.map(t => (
+          <div className="config-form-wrapper">
+            <form className="config-form" onSubmit={handleAddTurma}>
+              <label>Nome</label>
+              <input type="text" placeholder="Ex: 1A" value={turmaForm.nome}
+                onChange={e => setTurmaForm({...turmaForm, nome: e.target.value})} required />
+              <label>Série</label>
+              <input type="text" placeholder="Ex: 1º ano" value={turmaForm.serie}
+                onChange={e => setTurmaForm({...turmaForm, serie: e.target.value})} required />
+              <label>Ano Letivo</label>
+              <input type="number" placeholder="2024" value={turmaForm.ano_letivo}
+                onChange={e => setTurmaForm({...turmaForm, ano_letivo: e.target.value})} required />
+              <label>Turno</label>
+              <select value={turmaForm.turno_id} onChange={e => setTurmaForm({...turmaForm, turno_id: e.target.value})} required>
+                <option value="">Selecione...</option>
+                {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>
+              <Button type="submit">Adicionar</Button>
+            </form>
+          </div>
+          <div className="data-table-wrapper">
+            <DataTable headers={['Nome', 'Serie', 'Ano', 'Turno', '']} rows={turmas} emptyText="Nenhuma turma cadastrada">
+            {turmas.map(t => (
               <tr key={t.id}>
                 <td>{t.nome}</td>
                 <td>{t.serie}</td>
@@ -616,45 +611,43 @@ export default function ConfigPage() {
                 </td>
               </tr>
             ))}
-          </DataTable>
-          <PaginationControls
-            label="Turmas"
-            page={turmasPage.page}
-            totalPages={turmasPage.totalPages}
-            total={turmasPage.total}
-            limit={turmasPage.limit}
-            onPrevious={handleTurmasPrevious}
-            onNext={handleTurmasNext}
-            onLimitChange={handleChangeLimit}
-          />
+            </DataTable>
+          </div>
         </div>
       )}
 
       {activeTab === 'atribuicoes' && (
         <div className="config-section">
           <h3>Atribuicoes (Turma + Disciplina + Professor)</h3>
-          <form className="config-form" onSubmit={handleAddTD}>
-            <select value={tdForm.turma_id} onChange={e => setTdForm({...tdForm, turma_id: e.target.value})} required>
-              <option value="">Turma...</option>
-              {turmas.map(t => <option key={t.id} value={t.id}>{t.nome} ({t.turno_nome})</option>)}
-            </select>
-            <select value={tdForm.disciplina_id} onChange={e => setTdForm({...tdForm, disciplina_id: e.target.value})} required>
-              <option value="">Disciplina...</option>
-              {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-            </select>
-            <select value={tdForm.professor_id} onChange={e => setTdForm({...tdForm, professor_id: e.target.value})} required>
-              <option value="">Professor...</option>
-              {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
-            <input type="number" placeholder="Aulas/semana" value={tdForm.aulas_semana}
-              onChange={e => setTdForm({...tdForm, aulas_semana: e.target.value})} required min="1" />
-            <input type="number" placeholder="Tam. bloco" value={tdForm.tamanho_bloco}
-              onChange={e => setTdForm({...tdForm, tamanho_bloco: e.target.value})} min="1" />
-            <Button type="submit">{editingTdId ? 'Salvar edição' : 'Adicionar'}</Button>
-            {editingTdId && <Button type="button" variant="warning" onClick={handleCancelTDEdit}>Cancelar</Button>}
-          </form>
-          <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinasPage.items} emptyText="Nenhuma atribuicao cadastrada">
-            {turmaDisciplinasPage.items.map(td => (
+          <div className="config-form-wrapper">
+            <form className="config-form" onSubmit={handleAddTD}>
+              <label>Turma</label>
+              <select value={tdForm.turma_id} onChange={e => setTdForm({...tdForm, turma_id: e.target.value})} required>
+                <option value="">Selecione...</option>
+                {turmas.map(t => <option key={t.id} value={t.id}>{t.nome} ({t.turno_nome})</option>)}
+              </select>
+              <label>Disciplina</label>
+              <select value={tdForm.disciplina_id} onChange={e => setTdForm({...tdForm, disciplina_id: e.target.value})} required>
+                <option value="">Selecione...</option>
+                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
+              <label>Professor</label>
+              <select value={tdForm.professor_id} onChange={e => setTdForm({...tdForm, professor_id: e.target.value})} required>
+                <option value="">Selecione...</option>
+                {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              </select>
+              <label>Aulas por Semana</label>
+              <input type="number" placeholder="2, 3, 4..." value={tdForm.aulas_semana}
+                onChange={e => setTdForm({...tdForm, aulas_semana: e.target.value})} required min="1" />
+              <label>Tamanho do Bloco</label>
+              <input type="number" placeholder="1" value={tdForm.tamanho_bloco}
+                onChange={e => setTdForm({...tdForm, tamanho_bloco: e.target.value})} min="1" />
+              <Button type="submit">Adicionar</Button>
+            </form>
+          </div>
+          <div className="data-table-wrapper">
+            <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinas} emptyText="Nenhuma atribuicao cadastrada">
+            {turmaDisciplinas.map(td => (
               <tr key={td.id}>
                 <td>{td.turma_nome}</td>
                 <td>{td.disciplina_nome}</td>
@@ -667,17 +660,8 @@ export default function ConfigPage() {
                 </td>
               </tr>
             ))}
-          </DataTable>
-          <PaginationControls
-            label="Atribuições"
-            page={turmaDisciplinasPage.page}
-            totalPages={turmaDisciplinasPage.totalPages}
-            total={turmaDisciplinasPage.total}
-            limit={turmaDisciplinasPage.limit}
-            onPrevious={handleTDPrevious}
-            onNext={handleTDNext}
-            onLimitChange={handleChangeLimit}
-          />
+            </DataTable>
+          </div>
         </div>
       )}
     </div>

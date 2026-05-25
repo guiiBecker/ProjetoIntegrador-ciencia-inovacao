@@ -4,15 +4,13 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Toast from '../components/Toast';
 import DataTable from '../components/DataTable';
-import PaginationControls from '../components/PaginationControls';
-import { normalizePaginatedResponse } from '../utils/pagination';
-
-const DEFAULT_PAGE_LIMIT = 20;
+import './UsersPage.css';
 
 export default function UsersPage() {
   const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
   const [usersPage, setUsersPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [msg, setMsg] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
   const [form, setForm] = useState({ nome: '', email: '', password: '', role: 'user' });
 
   const loadUsers = useCallback(async (page = 1) => {
@@ -65,95 +63,99 @@ export default function UsersPage() {
     }
   };
 
-  const handlePrevious = () => {
-    if (usersPage.page > 1) {
-      loadUsers(usersPage.page - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (usersPage.page < usersPage.totalPages) {
-      loadUsers(usersPage.page + 1);
-    }
-  };
+  const filteredUsers = users.filter(user =>
+    user.nome.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchFilter.toLowerCase())
+  );
 
   return (
-    <div className="page-card">
+    <div className="users-page">
       <Toast message={msg} />
-      <div className="section-header">
+      <div className="users-header">
         <div>
           <h3>Usuarios do sistema</h3>
           <p className="config-hint">Crie perfis de administrador e de consulta para controlar o acesso ao sistema.</p>
         </div>
       </div>
 
-      <form className="config-form" onSubmit={handleSubmit} style={{ marginBottom: '1.25rem' }}>
-        <input
-          type="text"
-          placeholder="Nome"
-          value={form.nome}
-          onChange={(event) => setForm({ ...form, nome: event.target.value })}
-          required
-        />
-        <input
-          type="email"
-          placeholder="E-mail"
-          value={form.email}
-          onChange={(event) => setForm({ ...form, email: event.target.value })}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={form.password}
-          onChange={(event) => setForm({ ...form, password: event.target.value })}
-          required
-        />
-        <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
-          <option value="user">Usuario</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <Button type="submit">Criar usuario</Button>
-      </form>
+      <div className="users-container">
+        {/* COLUNA ESQUERDA - FORM */}
+        <div className="users-form-column">
+          <form className="users-form" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Nome"
+              value={form.nome}
+              onChange={(event) => setForm({ ...form, nome: event.target.value })}
+              required
+            />
+            <input
+              type="email"
+              placeholder="E-mail"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Senha"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              required
+            />
+            
+            <div className="role-section">
+              <label>Tipo de Perfil</label>
+              <div className="role-switch-container">
+                <span className={`role-label ${form.role === 'user' ? 'active' : ''}`}>Usuário</span>
+                <button
+                  type="button"
+                  className={`role-switch ${form.role === 'admin' ? 'active' : ''}`}
+                  onClick={() => setForm({ ...form, role: form.role === 'user' ? 'admin' : 'user' })}
+                >
+                  <span className="switch-circle"></span>
+                </button>
+                <span className={`role-label ${form.role === 'admin' ? 'active' : ''}`}>Admin</span>
+              </div>
+            </div>
 
-      <DataTable headers={['Nome', 'E-mail', 'Perfil', 'Status', 'Ação']} rows={usersPage.items} emptyText="Nenhum usuario cadastrado">
-        {usersPage.items.map((user) => (
-          <tr key={user.id}>
-            <td>{user.nome}</td>
-            <td>{user.email}</td>
-            <td><Badge variant={user.role === 'admin' ? 'selected' : 'extra'}>{user.role}</Badge></td>
-            <td>{user.ativo ? 'Ativo' : 'Inativo'}</td>
-            <td>
-              <button
-                type="button"
-                onClick={() => handleDelete(user.id, user.nome)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#ff4444',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                }}
-              >
-                Deletar
-              </button>
-            </td>
-          </tr>
-        ))}
-      </DataTable>
+            <Button type="submit">Criar usuario</Button>
+          </form>
+        </div>
 
-      <PaginationControls
-        label="Usuários"
-        page={usersPage.page}
-        totalPages={usersPage.totalPages}
-        total={usersPage.total}
-        limit={usersPage.limit}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        onLimitChange={handleChangeLimit}
-      />
+        {/* COLUNA DIREITA - LISTA */}
+        <div className="users-list-column">
+          <div className="users-search">
+            <input
+              type="text"
+              placeholder="Pesquisar por nome ou email..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          <div className="data-table-wrapper">
+            <DataTable headers={['Nome', 'E-mail', 'Perfil', 'Status', 'Ação']} rows={filteredUsers} emptyText="Nenhum usuario encontrado">
+            {filteredUsers.map((user) => (
+              <tr key={user.id}>
+                <td>{user.nome}</td>
+                <td>{user.email}</td>
+                <td><Badge variant={user.role === 'admin' ? 'selected' : 'extra'}>{user.role}</Badge></td>
+                <td>{user.ativo ? 'Ativo' : 'Inativo'}</td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(user.id, user.nome)}
+                    className="btn-delete"
+                  >
+                    Deletar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </DataTable>          </div>        </div>
+      </div>
     </div>
   );
 }
