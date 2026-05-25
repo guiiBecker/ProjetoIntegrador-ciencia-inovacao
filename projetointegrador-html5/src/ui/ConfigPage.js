@@ -518,93 +518,75 @@ export default function ConfigPage() {
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'periodos' && (
-        <div className="config-section">
+        <div className="config-section config-section--stacked">
           <h3>Horarios da Escola (Periodos)</h3>
           <p className="config-hint">Para cada turno, marque os dias da semana, defina a hora do 1o periodo e clique em Gerar. Os horarios sao calculados e os time slots criados apenas para os dias marcados. Gerar substitui os periodos existentes do turno.</p>
 
-          <h4>Turnos</h4>
-          <DataTable
-            headers={['Turno', 'Aulas hoje', '1o inicio', 'Aulas', 'Min/aula', 'Interv. apos', 'Min interv.', 'Dias', '']}
-            rows={turnos}
-            emptyText="Nenhum turno"
-          >
-            {turnos.map(t => {
-              const f = turnoForms[t.id] || {};
-              const selDias = f.dia_ids || [];
-              return (
-                <tr key={t.id}>
-                  <td>{t.nome}</td>
-                  <td>{aulasDoTurno(t.id)}</td>
-                  <td><input type="time" value={f.hora_inicio || ''}
-                    onChange={e => setTurnoField(t.id, 'hora_inicio', e.target.value)} /></td>
-                  <td><input type="number" min="1" style={{ width: '4rem' }} value={f.quantidade_aulas ?? ''}
-                    onChange={e => setTurnoField(t.id, 'quantidade_aulas', e.target.value)} /></td>
-                  <td><input type="number" min="1" style={{ width: '4rem' }} value={f.duracao_aula ?? ''}
-                    onChange={e => setTurnoField(t.id, 'duracao_aula', e.target.value)} /></td>
-                  <td><input type="number" min="1" style={{ width: '4rem' }} placeholder="-" value={f.intervalo_apos_aula ?? ''}
-                    onChange={e => setTurnoField(t.id, 'intervalo_apos_aula', e.target.value)} /></td>
-                  <td><input type="number" min="1" style={{ width: '4rem' }} value={f.duracao_intervalo ?? ''}
-                    onChange={e => setTurnoField(t.id, 'duracao_intervalo', e.target.value)} /></td>
-                  <td>
-                    <div className="dias-check">
-                      {dias.map(d => (
-                        <label key={d.id} className="dia-check">
-                          <input type="checkbox" checked={selDias.includes(d.id)}
-                            onChange={() => toggleTurnoDia(t.id, d.id)} />
-                          {d.nome.slice(0, 3)}
-                        </label>
-                      ))}
-                    </div>
-                  </td>
-                  <td><Button onClick={() => handleGerarTurno(t.id)}>Gerar</Button></td>
-                </tr>
-              );
-            })}
-          </DataTable>
-
-          <h4>Periodos cadastrados</h4>
-          <div className="config-form-wrapper">
-            <form className="config-form" onSubmit={handleAddPeriodo}>
-              <label>Turno</label>
-              <select value={periodoForm.turno_id} onChange={e => setPeriodoForm({...periodoForm, turno_id: e.target.value})} required>
-                <option value="">Selecione...</option>
-                {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-              </select>
-              <label>Número</label>
-              <input type="number" placeholder="1, 2, 3..." value={periodoForm.numero}
-                onChange={e => setPeriodoForm({...periodoForm, numero: e.target.value})} required min="1" />
-              <label>Início</label>
-              <input type="time" value={periodoForm.hora_inicio}
-                onChange={e => setPeriodoForm({...periodoForm, hora_inicio: e.target.value})} required />
-              <label>Fim</label>
-              <input type="time" value={periodoForm.hora_fim}
-                onChange={e => setPeriodoForm({...periodoForm, hora_fim: e.target.value})} required />
-              <label>Tipo</label>
-              <select value={periodoForm.tipo} onChange={e => setPeriodoForm({...periodoForm, tipo: e.target.value})}>
-                <option value="aula">Aula</option>
-                <option value="intervalo">Intervalo</option>
-                <option value="extra">Extra</option>
-              </select>
-              <Button type="submit">Adicionar</Button>
-            </form>
-            <Button className="btn-warning" onClick={handleRegenerateSlots}>Regenerar Time Slots</Button>
+          <div className="periodos-block">
+            <h4>Turnos</h4>
+            <div className="data-table-wrapper">
+              <DataTable
+                headers={['Turno', 'Aulas hoje', '1o inicio', 'Aulas', 'Min/aula', 'Interv. apos', 'Min interv.', 'Dias', '']}
+                rows={turnos}
+                emptyText="Nenhum turno"
+              >
+                {turnos.map(t => {
+                  const f = turnoForms[t.id] || {};
+                  const selDias = f.dia_ids || [];
+                  return (
+                    <tr key={t.id}>
+                      <td>{t.nome}</td>
+                      <td>{aulasDoTurno(t.id)}</td>
+                      <td><input type="time" value={f.hora_inicio || ''}
+                        onChange={e => setTurnoField(t.id, 'hora_inicio', e.target.value)} /></td>
+                      <td><input type="number" min="1" style={{ width: '4rem' }} value={f.quantidade_aulas ?? ''}
+                        onChange={e => setTurnoField(t.id, 'quantidade_aulas', e.target.value)} /></td>
+                      <td><input type="number" min="1" style={{ width: '4rem' }} value={f.duracao_aula ?? ''}
+                        onChange={e => setTurnoField(t.id, 'duracao_aula', e.target.value)} /></td>
+                      <td><input type="number" min="1" style={{ width: '4rem' }} placeholder="-" value={f.intervalo_apos_aula ?? ''}
+                        onChange={e => setTurnoField(t.id, 'intervalo_apos_aula', e.target.value)} /></td>
+                      <td><input type="number" min="1" style={{ width: '4rem' }} value={f.duracao_intervalo ?? ''}
+                        onChange={e => setTurnoField(t.id, 'duracao_intervalo', e.target.value)} /></td>
+                      <td>
+                        <div className="dias-check">
+                          {dias.map(d => (
+                            <label key={d.id} className="dia-check">
+                              <input type="checkbox" checked={selDias.includes(d.id)}
+                                onChange={() => toggleTurnoDia(t.id, d.id)} />
+                              {d.nome.slice(0, 3)}
+                            </label>
+                          ))}
+                        </div>
+                      </td>
+                      <td><Button onClick={() => handleGerarTurno(t.id)}>Gerar</Button></td>
+                    </tr>
+                  );
+                })}
+              </DataTable>
+            </div>
           </div>
-          <div className="data-table-wrapper">
-            <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos.items} emptyText="Nenhum periodo cadastrado">
-            {periodos.items.map(p => (
-              <tr key={p.id} className={p.tipo !== 'aula' ? 'row-intervalo' : ''}>
-                <td>{p.turno_nome}</td>
-                <td>{p.numero}</td>
-                <td>{p.hora_inicio?.slice(0,5)}</td>
-                <td>{p.hora_fim?.slice(0,5)}</td>
-                <td><Badge variant={p.tipo}>{p.tipo}</Badge></td>
-                <td style={{ display: 'flex', gap: '0.5rem' }}>
-                  <Button type="button" variant="info" onClick={() => handleEditPeriodo(p)}>Editar</Button>
-                  <Button type="button" variant="danger" onClick={() => handleDeletePeriodo(p.id)}>Deletar</Button>
-                </td>
-              </tr>
-            ))}
-            </DataTable>
+
+          <div className="periodos-block">
+            <div className="periodos-block-header">
+              <h4>Periodos cadastrados</h4>
+              <Button variant="warning" onClick={handleRegenerateSlots}>Regenerar Time Slots</Button>
+            </div>
+            <div className="data-table-wrapper">
+              <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos.items} emptyText="Nenhum periodo cadastrado">
+                {periodos.items.map(p => (
+                  <tr key={p.id} className={p.tipo !== 'aula' ? 'row-intervalo' : ''}>
+                    <td>{p.turno_nome}</td>
+                    <td>{p.numero}</td>
+                    <td>{p.hora_inicio?.slice(0,5)}</td>
+                    <td>{p.hora_fim?.slice(0,5)}</td>
+                    <td><Badge variant={p.tipo}>{p.tipo}</Badge></td>
+                    <td>
+                      <Button type="button" variant="danger" onClick={() => handleDeletePeriodo(p.id)}>Deletar</Button>
+                    </td>
+                  </tr>
+                ))}
+              </DataTable>
+            </div>
           </div>
         </div>
       )}

@@ -13,6 +13,33 @@
   margin-bottom: 3rem;
 }
 
+.config-page .config-section--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.config-page .periodos-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.config-page .periodos-block h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a202c;
+  letter-spacing: -0.2px;
+}
+
+.config-page .periodos-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
 .config-page .config-section h3 {
   grid-column: 1 / -1;
   font-size: 1.75rem;
