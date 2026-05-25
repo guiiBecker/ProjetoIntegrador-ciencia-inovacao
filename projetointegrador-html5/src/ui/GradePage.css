@@ -1,77 +1,134 @@
+@import './PageStyles.css';
+
 .grade-page {
-  padding: 0;
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .grade-layout {
   display: flex;
   min-height: 480px;
+  gap: 2.5rem;
 }
 
 .sidebar {
-  width: 260px;
-  background: #fff;
-  border-right: 1px solid #e0e0e0;
-  border-radius: 8px 0 0 8px;
-  padding: 1rem;
+  width: 280px;
+  background: white;
+  border: none;
+  border-radius: 12px;
+  padding: 2rem;
   flex-shrink: 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 @media (max-width: 900px) {
   .grade-layout {
     flex-direction: column;
     min-height: 0;
+    gap: 2rem;
   }
   .sidebar {
     width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
-    border-radius: 8px 8px 0 0;
-    max-height: 240px;
+    max-height: 280px;
     overflow-y: auto;
   }
 }
 
 .sidebar h3 {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.875rem;
+  color: #334155;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-.request-list { list-style: none; }
+.request-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .request-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.875rem;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.15s;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  color: #475569;
+  font-weight: 500;
 }
-.request-item:hover { background: #f5f5f5; }
-.request-item.active { background: #e8eaf6; font-weight: 600; }
-.no-items { color: #999; font-size: 0.85rem; padding: 0.5rem; }
+
+.request-item:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #1a202c;
+}
+
+.request-item.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  font-weight: 700;
+  color: #1e40af;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.15);
+}
+
+.no-items {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 1rem;
+  text-align: center;
+}
 
 .content {
   flex: 1;
   min-width: 0;
-  padding: 1.5rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  border: none;
   overflow-x: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
 }
 
 @media (max-width: 600px) {
-  .content { padding: 1rem 0.75rem; }
+  .content {
+    padding: 1.5rem;
+  }
 }
 
-.options-header-bar h2 { font-size: 1.1rem; }
-@media (max-width: 600px) {
+.options-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.options-header-bar h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  color: #1a202c;
+  letter-spacing: -0.5px;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
   .options-header-bar {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
   }
-  .options-header-bar h2 { font-size: 1rem; }
+  .options-header-bar h2 {
+    font-size: 1.5rem;
+  }
 }
 
 .placeholder {
@@ -80,35 +137,50 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #888;
-  font-size: 1rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  text-align: center;
+  gap: 1rem;
 }
-.placeholder.error { color: #c62828; }
 
-.options-container h2 { margin-bottom: 1rem; font-size: 1.2rem; }
+.placeholder p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
 
-.options-header-bar {
+.placeholder.error {
+  color: #dc2626;
+}
+
+.placeholder.error p {
+  color: #dc2626;
+}
+
+.options-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .edit-error {
-  background: #ffebee;
-  color: #c62828;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  font-size: 0.85rem;
+  background: #fef2f2;
+  color: #7f1d1d;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  border-left: 4px solid #dc2626;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .confirmed-banner {
-  background: #e8f5e9;
-  color: #2e7d32;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
+  background: #ecfdf5;
+  color: #166534;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  border-left: 4px solid #10b981;
+  line-height: 1.5;
 }

@@ -1,39 +1,177 @@
+@import './PageStyles.css';
+
 .config-page {
-  padding: 1.5rem 2rem;
-  max-width: 1100px;
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-.config-section h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  color: #1a1a2e;
+.config-page .config-section {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
 }
 
-.config-hint {
-  font-size: 0.82rem;
-  color: #888;
-  margin-bottom: 1rem;
+.config-page .config-section h3 {
+  grid-column: 1 / -1;
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem 0;
+  color: #1a202c;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.config-page .config-hint {
+  grid-column: 1 / -1;
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.config-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: fit-content;
 }
 
 .config-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 0;
 }
+
+.config-form label {
+  display: block;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+  letter-spacing: 0.3px;
+}
+
 .config-form input,
 .config-form select {
-  padding: 0.5rem 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  min-width: 100px;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #ffffff;
+  color: #1a202c;
+  transition: all 0.3s ease;
+  font-family: inherit;
 }
+
+.config-form input::placeholder,
+.config-form select::placeholder {
+  color: #94a3b8;
+}
+
+.config-form input:hover,
+.config-form select:hover {
+  border-color: #cbd5e1;
+}
+
 .config-form input:focus,
 .config-form select:focus {
-  border-color: #1a1a2e;
   outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.05);
+  background-color: #f8fafc;
+}
+
+.config-form-wrapper .btn-primary,
+.config-form-wrapper .btn-warning {
+  width: 100%;
+  padding: 0.75rem !important;
+  font-size: 0.875rem !important;
+  margin: 0.375rem 0 0 0 !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.config-form-wrapper .btn-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3) !important;
+}
+
+.config-form-wrapper .btn-warning:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* ESTILOS ESPECÍFICOS PARA ConfigPage - Tabelas */
+.config-page .data-table-wrapper {
+  max-height: 700px;
+}
+
+/* Row Intervalo - cor de fundo para intervalos */
+.data-table-wrapper .row-intervalo {
+  background-color: #fef3c7;
+}
+
+.data-table-wrapper .row-intervalo:hover {
+  background-color: #fde68a;
+}
+
+/* Botões dentro de tabelas */
+.data-table-wrapper button {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.data-table-wrapper button:hover {
+  transform: scale(1.05) !important;
+}
+
+@media (max-width: 1200px) {
+  .config-page .config-section {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .config-page {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .config-page .config-section h3 {
+    font-size: 1.5rem;
+  }
+
+  .config-page .config-form-wrapper,
+  .config-page .data-table-wrapper {
+    padding: 1.5rem;
+  }
+
+  .config-page .config-form input,
+  .config-page .config-form select {
+    padding: 0.7rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .config-page .data-table-wrapper {
+    max-height: 400px;
+  }
+
+  .config-page .data-table-wrapper td,
+  .config-page .data-table-wrapper th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
 }
 
 /* Aba Periodos: tabela de turnos com inputs e dias selecionaveis */

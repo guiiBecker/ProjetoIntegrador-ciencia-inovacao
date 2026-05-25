@@ -2,9 +2,11 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Param,
   Body,
+  Query,
   HttpException,
   HttpStatus,
   ParseIntPipe,
@@ -14,6 +16,7 @@ import { ConfigService } from './config.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { parsePaginationQuery } from '../common/pagination';
 
 @Controller('api/config')
 @UseGuards(AuthGuard, RolesGuard)
@@ -24,22 +27,31 @@ export class ConfigController {
   // ===================== TURNOS =====================
 
   @Get('turnos')
-  async listTurnos(): Promise<unknown[]> {
-    return this.configService.listTurnos();
+  async listTurnos(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listTurnos(parsePaginationQuery(page, limit));
   }
 
   // ===================== DIAS =====================
 
   @Get('dias')
-  async listDias(): Promise<unknown[]> {
-    return this.configService.listDias();
+  async listDias(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listDias(parsePaginationQuery(page, limit));
   }
 
   // ===================== PERIODOS =====================
 
   @Get('periodos')
-  async listPeriodos(): Promise<unknown[]> {
-    return this.configService.listPeriodos();
+  async listPeriodos(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listPeriodos(parsePaginationQuery(page, limit));
   }
 
   @Post('periodos')
@@ -50,6 +62,19 @@ export class ConfigController {
       throw new HttpException('Campos obrigatorios: numero, hora_inicio, hora_fim, turno_id', HttpStatus.BAD_REQUEST);
     }
     return this.configService.createPeriodo(body);
+  }
+
+  @Put('periodos/:id')
+  async updatePeriodo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { numero: number; hora_inicio: string; hora_fim: string; tipo: string; turno_id: number },
+  ): Promise<unknown> {
+    if (!body.numero || !body.hora_inicio || !body.hora_fim || !body.turno_id) {
+      throw new HttpException('Campos obrigatorios: numero, hora_inicio, hora_fim, turno_id', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.configService.updatePeriodo(id, body);
+    if (!updated) throw new HttpException('Periodo nao encontrado', HttpStatus.NOT_FOUND);
+    return updated;
   }
 
   @Delete('periodos/:id')
@@ -97,8 +122,11 @@ export class ConfigController {
   // ===================== PROFESSORES =====================
 
   @Get('professores')
-  async listProfessores(): Promise<unknown[]> {
-    return this.configService.listProfessores();
+  async listProfessores(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listProfessores(parsePaginationQuery(page, limit));
   }
 
   @Post('professores')
@@ -111,6 +139,19 @@ export class ConfigController {
     return this.configService.createProfessor(body);
   }
 
+  @Put('professores/:id')
+  async updateProfessor(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { nome: string; email?: string; carga_horaria_max?: number },
+  ): Promise<unknown> {
+    if (!body.nome) {
+      throw new HttpException('Nome e obrigatorio', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.configService.updateProfessor(id, body);
+    if (!updated) throw new HttpException('Professor nao encontrado', HttpStatus.NOT_FOUND);
+    return updated;
+  }
+
   @Delete('professores/:id')
   async deleteProfessor(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean }> {
     const ok = await this.configService.deleteProfessor(id);
@@ -121,8 +162,11 @@ export class ConfigController {
   // ===================== DISCIPLINAS =====================
 
   @Get('disciplinas')
-  async listDisciplinas(): Promise<unknown[]> {
-    return this.configService.listDisciplinas();
+  async listDisciplinas(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listDisciplinas(parsePaginationQuery(page, limit));
   }
 
   @Post('disciplinas')
@@ -135,6 +179,19 @@ export class ConfigController {
     return this.configService.createDisciplina(body);
   }
 
+  @Put('disciplinas/:id')
+  async updateDisciplina(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { nome: string; sigla?: string; peso?: number },
+  ): Promise<unknown> {
+    if (!body.nome) {
+      throw new HttpException('Nome e obrigatorio', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.configService.updateDisciplina(id, body);
+    if (!updated) throw new HttpException('Disciplina nao encontrada', HttpStatus.NOT_FOUND);
+    return updated;
+  }
+
   @Delete('disciplinas/:id')
   async deleteDisciplina(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean }> {
     const ok = await this.configService.deleteDisciplina(id);
@@ -145,8 +202,11 @@ export class ConfigController {
   // ===================== TURMAS =====================
 
   @Get('turmas')
-  async listTurmas(): Promise<unknown[]> {
-    return this.configService.listTurmas();
+  async listTurmas(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listTurmas(parsePaginationQuery(page, limit));
   }
 
   @Post('turmas')
@@ -159,6 +219,19 @@ export class ConfigController {
     return this.configService.createTurma(body);
   }
 
+  @Put('turmas/:id')
+  async updateTurma(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { nome: string; serie: string; ano_letivo: number; turno_id: number },
+  ): Promise<unknown> {
+    if (!body.nome || !body.serie || !body.ano_letivo || !body.turno_id) {
+      throw new HttpException('Campos obrigatorios: nome, serie, ano_letivo, turno_id', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.configService.updateTurma(id, body);
+    if (!updated) throw new HttpException('Turma nao encontrada', HttpStatus.NOT_FOUND);
+    return updated;
+  }
+
   @Delete('turmas/:id')
   async deleteTurma(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean }> {
     const ok = await this.configService.deleteTurma(id);
@@ -169,8 +242,11 @@ export class ConfigController {
   // ===================== TURMA_DISCIPLINA =====================
 
   @Get('turma-disciplinas')
-  async listTurmaDisciplinas(): Promise<unknown[]> {
-    return this.configService.listTurmaDisciplinas();
+  async listTurmaDisciplinas(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.configService.listTurmaDisciplinas(parsePaginationQuery(page, limit));
   }
 
   @Post('turma-disciplinas')
@@ -181,6 +257,19 @@ export class ConfigController {
       throw new HttpException('Campos obrigatorios: turma_id, disciplina_id, professor_id, aulas_semana', HttpStatus.BAD_REQUEST);
     }
     return this.configService.createTurmaDisciplina(body);
+  }
+
+  @Put('turma-disciplinas/:id')
+  async updateTurmaDisciplina(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { turma_id: number; disciplina_id: number; professor_id: number; aulas_semana: number; tamanho_bloco?: number },
+  ): Promise<unknown> {
+    if (!body.turma_id || !body.disciplina_id || !body.professor_id || !body.aulas_semana) {
+      throw new HttpException('Campos obrigatorios: turma_id, disciplina_id, professor_id, aulas_semana', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.configService.updateTurmaDisciplina(id, body);
+    if (!updated) throw new HttpException('Atribuicao nao encontrada', HttpStatus.NOT_FOUND);
+    return updated;
   }
 
   @Delete('turma-disciplinas/:id')

@@ -1,0 +1,263 @@
+@import './PageStyles.css';
+
+.users-page {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.users-header {
+  margin-bottom: 2rem;
+}
+
+.users-header h3 {
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem 0;
+  color: #1a202c;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.users-header .config-hint {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.users-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+}
+
+/* COLUNA DO FORM */
+.users-form-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.users-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.users-form input,
+.users-form select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  color: #1a202c;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.users-form input::placeholder {
+  color: #94a3b8;
+}
+
+.users-form input:hover,
+.users-form select:hover {
+  border-color: #cbd5e1;
+}
+
+.users-form input:focus,
+.users-form select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.05);
+  background-color: #f8fafc;
+}
+
+/* ROLE SECTION COM SWITCH */
+.role-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.role-section label {
+  display: block;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.role-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.role-label {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  min-width: 70px;
+}
+
+.role-label.active {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.role-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 56px;
+  height: 32px;
+  background-color: #e2e8f0;
+  border: 2px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0;
+  position: relative;
+}
+
+.role-switch:hover {
+  border-color: #94a3b8;
+}
+
+.role-switch.active {
+  background-color: #3b82f6;
+  border-color: #2563eb;
+}
+
+.switch-circle {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.role-switch.active .switch-circle {
+  transform: translateX(24px);
+}
+
+/* COLUNA DA LISTA */
+.users-list-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.users-search {
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: white;
+  color: #1a202c;
+  transition: all 0.3s ease;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input:hover {
+  border-color: #cbd5e1;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.05);
+  background-color: #f8fafc;
+}
+
+/* ESTILOS ESPECÍFICOS PARA UsersPage - Botão Delete */
+.btn-delete {
+  padding: 0.5rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-delete:active {
+  transform: translateY(0);
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 1200px) {
+  .users-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .users-page {
+    padding: 1.5rem;
+  }
+
+  .users-header h3 {
+    font-size: 1.5rem;
+  }
+
+  .users-form {
+    padding: 1.5rem;
+  }
+
+  .users-form input,
+  .users-form select {
+    padding: 0.7rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .users-search {
+    flex-direction: column;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .data-table-wrapper {
+    max-height: 400px;
+  }
+
+  .data-table-wrapper td,
+  .data-table-wrapper th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .btn-delete {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+}

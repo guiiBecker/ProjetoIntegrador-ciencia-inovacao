@@ -1,37 +1,68 @@
 .badge {
   display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-/* Tipo badges */
-.badge-aula { background: #c8e6c9; color: #1b5e20; }
-.badge-intervalo { background: #fff3cd; color: #856404; }
-.badge-extra { background: #e0e0e0; color: #555; }
+/* Type badges */
+.badge-aula {
+  background: var(--color-success-light);
+  color: #059669;
+}
+
+.badge-intervalo {
+  background: var(--color-warning-light);
+  color: #b45309;
+}
+
+.badge-extra {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-700);
+}
 
 /* Status badges */
-.badge-pending { background: #fff3cd; color: #856404; }
-.badge-processing { background: #cce5ff; color: #004085; }
-.badge-completed { background: #d4edda; color: #155724; }
-.badge-failed { background: #f8d7da; color: #721c24; }
-.badge-confirmed { background: #c8e6c9; color: #1b5e20; }
+.badge-pending {
+  background: var(--color-warning-light);
+  color: #b45309;
+}
+
+.badge-processing {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.badge-completed {
+  background: var(--color-success-light);
+  color: #059669;
+}
+
+.badge-failed {
+  background: var(--color-danger-light);
+  color: #b91c1c;
+}
+
+.badge-confirmed {
+  background: var(--color-success-light);
+  color: #059669;
+}
 
 /* Selected option badge */
 .badge-selected {
-  background: #4caf50;
-  color: #fff;
-  padding: 0.4rem 1rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  background: var(--color-success);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
 }
 
 /* Score badge */
 .badge-score {
-  font-size: 0.8rem;
-  color: #555;
+  font-size: 0.85rem;
+  color: var(--color-neutral-700);
   font-weight: 500;
   background: transparent;
   padding: 0;

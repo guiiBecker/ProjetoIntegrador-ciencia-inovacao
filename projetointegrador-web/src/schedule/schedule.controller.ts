@@ -5,6 +5,7 @@ import {
   Put,
   Param,
   Body,
+  Query,
   HttpException,
   HttpStatus,
   ParseIntPipe,
@@ -15,6 +16,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Public } from '../auth/public.decorator';
+import { parsePaginationQuery } from '../common/pagination';
 
 @Controller('api/schedule')
 @UseGuards(AuthGuard, RolesGuard)
@@ -23,8 +25,11 @@ export class ScheduleController {
 
   @Get('public')
   @Public()
-  async listConfirmedRequests(): Promise<unknown[]> {
-    return this.scheduleService.listConfirmedRequests();
+  async listConfirmedRequests(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.scheduleService.listConfirmedRequests(parsePaginationQuery(page, limit));
   }
 
   @Get('public/:id')
@@ -47,8 +52,11 @@ export class ScheduleController {
 
   @Get()
   @Roles('admin')
-  async listRequests(): Promise<unknown[]> {
-    return this.scheduleService.listRequests();
+  async listRequests(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.scheduleService.listRequests(parsePaginationQuery(page, limit));
   }
 
   @Get(':id')

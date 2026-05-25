@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   Res,
+  Query,
   HttpException,
   HttpStatus,
   UseGuards,
@@ -18,6 +19,7 @@ import { LoginInput, CreateUserInput } from './auth.types';
 import { AUTH_COOKIE_NAME } from './auth.constants';
 import { Public } from './public.decorator';
 import { Roles } from './roles.decorator';
+import { parsePaginationQuery } from '../common/pagination';
 
 @Controller('api/auth')
 @UseGuards(AuthGuard, RolesGuard)
@@ -64,8 +66,11 @@ export class AuthController {
 
   @Get('users')
   @Roles('admin')
-  async listUsers(): Promise<unknown[]> {
-    return this.authService.listUsers();
+  async listUsers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<unknown> {
+    return this.authService.listUsers(parsePaginationQuery(page, limit));
   }
 
   @Post('users')

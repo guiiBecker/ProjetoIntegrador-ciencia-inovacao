@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 import { Queue } from 'bullmq';
 import { DB_POOL } from '../database/database.module';
 import { SCHEDULE_QUEUE } from '../queue/queue.module';
+import { PaginationParams, paginateQuery } from '../common/pagination';
 
 @Injectable()
 export class ScheduleService {
@@ -20,18 +21,26 @@ export class ScheduleService {
     return request;
   }
 
-  async listRequests(): Promise<unknown[]> {
-    const result = await this.pool.query(
+  async listRequests(
+    pagination?: PaginationParams,
+  ): Promise<unknown[] | { items: unknown[]; page: number; limit: number; total: number; totalPages: number }> {
+    return paginateQuery(
+      this.pool,
       'SELECT id, status, criado_em FROM schedule_request ORDER BY criado_em DESC',
+      [],
+      pagination,
     );
-    return result.rows;
   }
 
-  async listConfirmedRequests(): Promise<unknown[]> {
-    const result = await this.pool.query(
+  async listConfirmedRequests(
+    pagination?: PaginationParams,
+  ): Promise<unknown[] | { items: unknown[]; page: number; limit: number; total: number; totalPages: number }> {
+    return paginateQuery(
+      this.pool,
       "SELECT id, status, criado_em FROM schedule_request WHERE status = 'confirmed' ORDER BY criado_em DESC",
+      [],
+      pagination,
     );
-    return result.rows;
   }
 
   async getRequest(id: number): Promise<unknown | null> {

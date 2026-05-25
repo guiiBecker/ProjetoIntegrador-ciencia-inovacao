@@ -1,31 +1,212 @@
+@import './PageStyles.css';
+
 .prof-page {
-  padding: 1.5rem 2rem;
-  max-width: 900px;
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-.prof-page h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  color: #1a1a2e;
+.prof-page-header {
+  margin-bottom: 2rem;
+}
+
+.prof-page-header h3 {
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem 0;
+  color: #1a202c;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.prof-page-header .config-hint {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.config-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.config-section h3 {
+  grid-column: 1 / -1;
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem 0;
+  color: #1a202c;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .config-hint {
-  font-size: 0.82rem;
-  color: #888;
-  margin-bottom: 1rem;
-}
-
-.link-actions {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-.links-history {
-  margin-top: 2rem;
-}
-.links-history h4 {
+  grid-column: 1 / -1;
   font-size: 0.95rem;
-  margin-bottom: 0.75rem;
-  color: #333;
+  color: #64748b;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.prof-page .filter-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prof-page .filter-wrapper label {
+  display: block;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.prof-page .config-section .data-table-wrapper {
+  grid-column: 1 / -1;
+}
+
+.config-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: white;
+  border: none;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.config-form-wrapper label {
+  display: block;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.3px;
+}
+
+.config-form-wrapper input,
+.config-form-wrapper select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  color: #1a202c;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.config-form-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.config-form-wrapper input:hover,
+.config-form-wrapper select:hover {
+  border-color: #cbd5e1;
+}
+
+.config-form-wrapper input:focus,
+.config-form-wrapper select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.05);
+  background-color: #f8fafc;
+}
+
+.filter-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: white;
+  transition: all 0.3s ease;
+  width: 100%;
+  color: #1a202c;
+  font-family: inherit;
+}
+
+.filter-input::placeholder {
+  color: #94a3b8;
+}
+
+.filter-input:hover {
+  border-color: #cbd5e1;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.05);
+  background-color: #f8fafc;
+}
+
+.table-actions {
+  justify-content: center;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.table-actions button {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.table-actions button:hover {
+  transform: translateY(-2px) !important;
+}
+
+.empty-text {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  padding: 2rem 1rem;
+}
+
+@media (max-width: 1200px) {
+  .config-section {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .prof-page {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .prof-page-header h3 {
+    font-size: 1.5rem;
+  }
+
+  .config-section h3 {
+    font-size: 1.5rem;
+  }
+
+  .config-form-wrapper {
+    padding: 1.5rem;
+  }
+
+  .config-form-wrapper input,
+  .config-form-wrapper select {
+    padding: 0.7rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .data-table-wrapper {
+    max-height: 400px;
+  }
+
+  .data-table-wrapper td,
+  .data-table-wrapper th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
 }
