@@ -2,12 +2,31 @@ import { Worker } from 'bullmq';
 import { Pool } from 'pg';
 import { generateSchedules } from './scheduler';
 
+// Required secrets/connection settings have no safe default — fail fast if absent.
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value === '') {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function optionalPort(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid ${name}: expected a positive integer, got "${raw}"`);
+  }
+  return parsed;
+}
+
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || 'projetointegrador',
-  user: process.env.DB_USER || 'admin',
-  password: process.env.DB_PASSWORD || 'admin123',
+  host: requireEnv('DB_HOST'),
+  port: optionalPort('DB_PORT', 5432),
+  database: requireEnv('DB_NAME'),
+  user: requireEnv('DB_USER'),
+  password: requireEnv('DB_PASSWORD'),
   max: 5,
 });
 
@@ -20,8 +39,8 @@ const worker = new Worker(
   },
   {
     connection: {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number(process.env.REDIS_PORT) || 6379,
+      host: requireEnv('REDIS_HOST'),
+      port: optionalPort('REDIS_PORT', 6379),
     },
   },
 );

@@ -4,7 +4,10 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Toast from '../components/Toast';
 import DataTable from '../components/DataTable';
+import { normalizePaginatedResponse } from '../utils/pagination';
 import './UsersPage.css';
+
+const DEFAULT_PAGE_LIMIT = 20;
 
 export default function UsersPage() {
   const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
@@ -63,7 +66,7 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = usersPage.items.filter(user =>
     user.nome.toLowerCase().includes(searchFilter.toLowerCase()) ||
     user.email.toLowerCase().includes(searchFilter.toLowerCase())
   );

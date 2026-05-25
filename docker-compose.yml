@@ -54,6 +54,11 @@ services:
       - DB_PASSWORD=admin123
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Reaplica sql/mock_data.sql a cada subida do backend (ambiente de testes)
+      - SEED_ON_STARTUP=true
+      - SEED_SQL_PATH=/app/sql/mock_data.sql
+    volumes:
+      - ./sql:/app/sql:ro
     depends_on:
       db:
         condition: service_healthy
