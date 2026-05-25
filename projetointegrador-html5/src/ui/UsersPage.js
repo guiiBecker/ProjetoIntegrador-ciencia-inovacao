@@ -7,21 +7,27 @@ import DataTable from '../components/DataTable';
 import './UsersPage.css';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState([]);
+  const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
+  const [usersPage, setUsersPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [msg, setMsg] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
   const [form, setForm] = useState({ nome: '', email: '', password: '', role: 'user' });
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (page = 1) => {
     try {
-      const data = await apiJson('/api/auth/users');
-      setUsers(data);
+      const data = await apiJson(`/api/auth/users?page=${page}&limit=${pageLimit}`);
+      setUsersPage(normalizePaginatedResponse(data, pageLimit));
     } catch (err) {
       setMsg(err.message || 'Erro ao carregar usuarios');
     }
-  }, []);
+  }, [pageLimit]);
 
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+  useEffect(() => { loadUsers(1); }, [loadUsers]);
+
+  const handleChangeLimit = (newLimit) => {
+    setPageLimit(newLimit);
+    setUsersPage((current) => ({ ...current, page: 1, limit: newLimit }));
+  };
 
   const showMsg = (text) => {
     setMsg(text);
@@ -31,14 +37,14 @@ export default function UsersPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const data = await apiJson('/api/auth/users', {
+      await apiJson('/api/auth/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      setUsers((prev) => [data.user, ...prev]);
       setForm({ nome: '', email: '', password: '', role: 'user' });
       showMsg('Usuario criado com sucesso');
+      loadUsers(usersPage.page);
     } catch (err) {
       showMsg(err.message || 'Erro ao criar usuario');
     }
@@ -50,8 +56,8 @@ export default function UsersPage() {
     }
     try {
       await apiJson(`/api/auth/users/${userId}`, { method: 'DELETE' });
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
       showMsg('Usuario deletado com sucesso');
+      loadUsers(usersPage.page);
     } catch (err) {
       showMsg(err.message || 'Erro ao deletar usuario');
     }

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { randomBytes } from 'crypto';
 import { DB_POOL } from '../database/database.module';
+import { PaginationParams, paginateQuery } from '../common/pagination';
 
 @Injectable()
 export class FormService {
@@ -23,15 +24,19 @@ export class FormService {
     return { token };
   }
 
-  async listLinks(): Promise<unknown[]> {
-    const result = await this.pool.query(
+  async listLinks(
+    pagination?: PaginationParams,
+  ): Promise<unknown[] | { items: unknown[]; page: number; limit: number; total: number; totalPages: number }> {
+    return paginateQuery(
+      this.pool,
       `SELECT fl.id, fl.token, fl.respondido, fl.criado_em, fl.respondido_em,
               p.id AS professor_id, p.nome AS professor_nome, p.email AS professor_email
        FROM professor_form_link fl
        JOIN professor p ON fl.professor_id = p.id
        ORDER BY fl.criado_em DESC`,
+      [],
+      pagination,
     );
-    return result.rows;
   }
 
   async getFormData(token: string): Promise<unknown | null> {

@@ -17,14 +17,18 @@ export default function ScheduleViewerPage() {
   const [activeRequest, setActiveRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('turma');
+  const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
+  const [requestPage, setRequestPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
 
-  const loadRequests = useCallback(async () => {
+  const loadRequests = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const data = await apiJson('/api/schedule/public');
-      setRequests(data);
-      if (data.length > 0) {
-        const detail = await apiJson(`/api/schedule/public/${data[0].id}`);
+      const data = await apiJson(`/api/schedule/public?page=${page}&limit=${pageLimit}`);
+      const normalized = normalizePaginatedResponse(data, pageLimit);
+      setRequestPage(normalized);
+      setRequests(normalized.items);
+      if (normalized.items.length > 0) {
+        const detail = await apiJson(`/api/schedule/public/${normalized.items[0].id}`);
         setActiveRequest(detail);
       } else {
         setActiveRequest(null);
@@ -35,9 +39,14 @@ export default function ScheduleViewerPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [pageLimit]);
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
+
+  const handleChangeLimit = (newLimit) => {
+    setPageLimit(newLimit);
+    setRequestPage((current) => ({ ...current, page: 1, limit: newLimit }));
+  };
 
   const openRequest = async (requestId) => {
     try {
@@ -59,6 +68,18 @@ export default function ScheduleViewerPage() {
     processing: 'Processando',
   };
 
+  const handlePrevious = () => {
+    if (requestPage.page > 1) {
+      loadRequests(requestPage.page - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (requestPage.page < requestPage.totalPages) {
+      loadRequests(requestPage.page + 1);
+    }
+  };
+
   return (
     <div className="schedule-viewer-page">
       <div className="schedule-header">
@@ -66,7 +87,7 @@ export default function ScheduleViewerPage() {
           <h3>Horários confirmados</h3>
           <p className="config-hint">Área somente leitura para consulta das grades já aprovadas.</p>
         </div>
-        <Button variant="info" onClick={loadRequests}>Atualizar</Button>
+        <Button variant="info" onClick={() => loadRequests(requestPage.page)}>Atualizar</Button>
       </div>
 
       <div className="viewer-grid">
@@ -75,24 +96,36 @@ export default function ScheduleViewerPage() {
           {loading ? (
             <Spinner />
           ) : (
-            <ul className="viewer-list">
-              {requests.map((request) => (
-                <li key={request.id}>
-                  <button
-                    type="button"
-                    className={`viewer-item ${activeRequest?.id === request.id ? 'active' : ''}`}
-                    onClick={() => openRequest(request.id)}
-                  >
-                    <div className="viewer-item-title">Requisição #{request.id}</div>
-                    <div className="viewer-item-meta">
-                      <span>{new Date(request.criado_em).toLocaleString('pt-BR')}</span>
-                      <Badge variant={request.status}>{statusLabel[request.status] || request.status}</Badge>
-                    </div>
-                  </button>
-                </li>
-              ))}
-              {requests.length === 0 && <li className="empty-state">Nenhuma grade confirmada encontrada.</li>}
-            </ul>
+            <>
+              <ul className="viewer-list">
+                {requests.map((request) => (
+                  <li key={request.id}>
+                    <button
+                      type="button"
+                      className={`viewer-item ${activeRequest?.id === request.id ? 'active' : ''}`}
+                      onClick={() => openRequest(request.id)}
+                    >
+                      <div className="viewer-item-title">Requisição #{request.id}</div>
+                      <div className="viewer-item-meta">
+                        <span>{new Date(request.criado_em).toLocaleString('pt-BR')}</span>
+                        <Badge variant={request.status}>{statusLabel[request.status] || request.status}</Badge>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+                {requests.length === 0 && <li className="empty-state">Nenhuma grade confirmada encontrada.</li>}
+              </ul>
+              <PaginationControls
+                label="Requisições"
+                page={requestPage.page}
+                totalPages={requestPage.totalPages}
+                total={requestPage.total}
+                limit={requestPage.limit}
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                onLimitChange={handleChangeLimit}
+              />
+            </>
           )}
         </aside>
 

@@ -13,24 +13,34 @@ const TABS = [
 ];
 
 export default function ProfessoresPage() {
-  const [professores, setProfessores] = useState([]);
-  const [links, setLinks] = useState([]);
+  const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
+  const [professoresPage, setProfessoresPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
+  const [linksPage, setLinksPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
+  const [allLinks, setAllLinks] = useState([]);
   const [msg, setMsg] = useState('');
   const [activeTab, setActiveTab] = useState('professores');
   const [filtroNome, setFiltroNome] = useState('');
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (profPage = 1, linkPage = 1) => {
     try {
       const [profs, lks] = await Promise.all([
-        apiJson('/api/config/professores'),
+        apiJson(`/api/config/professores?page=${profPage}&limit=${pageLimit}`),
         apiJson('/api/form/links'),
       ]);
-      setProfessores(profs);
-      setLinks(lks);
+      const history = await apiJson(`/api/form/links?page=${linkPage}&limit=${pageLimit}`);
+      setProfessoresPage(normalizePaginatedResponse(profs, pageLimit));
+      setAllLinks(Array.isArray(lks) ? lks : []);
+      setLinksPage(normalizePaginatedResponse(history, pageLimit));
     } catch (err) { console.error(err); }
-  }, []);
+  }, [pageLimit]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(1, 1); }, [loadData]);
+
+  const handleChangeLimit = (newLimit) => {
+    setPageLimit(newLimit);
+    setProfessoresPage((current) => ({ ...current, page: 1, limit: newLimit }));
+    setLinksPage((current) => ({ ...current, page: 1, limit: newLimit }));
+  };
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 5000); };
 
@@ -40,7 +50,7 @@ export default function ProfessoresPage() {
       const data = await res.json();
       if (!res.ok) { showMsg(data.message || 'Erro'); return; }
       showMsg('Link gerado com sucesso!');
-      loadData();
+      loadData(professoresPage.page, 1);
     } catch (err) { showMsg('Erro de conexao'); }
   };
 

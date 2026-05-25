@@ -5,7 +5,11 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Toast from '../components/Toast';
 import DataTable from '../components/DataTable';
+import PaginationControls from '../components/PaginationControls';
+import { normalizePaginatedResponse } from '../utils/pagination';
 import './ConfigPage.css';
+
+const DEFAULT_PAGE_LIMIT = 20;
 
 const TABS = [
   { key: 'periodos', label: 'Periodos' },
@@ -17,13 +21,22 @@ const TABS = [
 
 export default function ConfigPage() {
   const [turnos, setTurnos] = useState([]);
-  const [periodos, setPeriodos] = useState([]);
+  const [pageLimit, setPageLimit] = useState(() => DEFAULT_PAGE_LIMIT);
+  const [periodos, setPeriodos] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [professores, setProfessores] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
   const [turmas, setTurmas] = useState([]);
-  const [turmaDisciplinas, setTurmaDisciplinas] = useState([]);
+  const [professoresPage, setProfessoresPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
+  const [disciplinasPage, setDisciplinasPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
+  const [turmasPage, setTurmasPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
+  const [turmaDisciplinasPage, setTurmaDisciplinasPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [msg, setMsg] = useState('');
   const [activeTab, setActiveTab] = useState('periodos');
+  const [editingProfessorId, setEditingProfessorId] = useState(null);
+  const [editingDisciplinaId, setEditingDisciplinaId] = useState(null);
+  const [editingTurmaId, setEditingTurmaId] = useState(null);
+  const [editingPeriodoId, setEditingPeriodoId] = useState(null);
+  const [editingTdId, setEditingTdId] = useState(null);
 
   const [periodoForm, setPeriodoForm] = useState({ numero: '', hora_inicio: '', hora_fim: '', tipo: 'aula', turno_id: '' });
   const [profForm, setProfForm] = useState({ nome: '', email: '', carga_horaria_max: 40 });
@@ -31,42 +44,158 @@ export default function ConfigPage() {
   const [turmaForm, setTurmaForm] = useState({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '' });
   const [tdForm, setTdForm] = useState({ turma_id: '', disciplina_id: '', professor_id: '', aulas_semana: '', tamanho_bloco: 1 });
 
-  const loadAll = useCallback(async () => {
+  const loadReferenceData = useCallback(async () => {
     try {
-      const [t, p, pr, d, tu, td] = await Promise.all([
+      const [t, pr, d, tu] = await Promise.all([
         apiJson('/api/config/turnos'),
-        apiJson('/api/config/periodos'),
         apiJson('/api/config/professores'),
         apiJson('/api/config/disciplinas'),
         apiJson('/api/config/turmas'),
-        apiJson('/api/config/turma-disciplinas'),
       ]);
-      setTurnos(t); setPeriodos(p); setProfessores(pr); setDisciplinas(d); setTurmas(tu); setTurmaDisciplinas(td);
+      setTurnos(t);
+      setProfessores(pr);
+      setDisciplinas(d);
+      setTurmas(tu);
     } catch (err) { console.error(err); }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  const loadPeriodosPage = useCallback(async (page = 1) => {
+    try {
+      const data = await apiJson(`/api/config/periodos?page=${page}&limit=${pageLimit}`);
+      setPeriodos(normalizePaginatedResponse(data, pageLimit));
+    } catch (err) { console.error(err); }
+  }, [pageLimit]);
+
+  const loadProfessoresPage = useCallback(async (page = 1) => {
+    try {
+      const data = await apiJson(`/api/config/professores?page=${page}&limit=${pageLimit}`);
+      setProfessoresPage(normalizePaginatedResponse(data, pageLimit));
+    } catch (err) { console.error(err); }
+  }, [pageLimit]);
+
+  const loadDisciplinasPage = useCallback(async (page = 1) => {
+    try {
+      const data = await apiJson(`/api/config/disciplinas?page=${page}&limit=${pageLimit}`);
+      setDisciplinasPage(normalizePaginatedResponse(data, pageLimit));
+    } catch (err) { console.error(err); }
+  }, [pageLimit]);
+
+  const loadTurmasPage = useCallback(async (page = 1) => {
+    try {
+      const data = await apiJson(`/api/config/turmas?page=${page}&limit=${pageLimit}`);
+      setTurmasPage(normalizePaginatedResponse(data, pageLimit));
+    } catch (err) { console.error(err); }
+  }, [pageLimit]);
+
+  const loadTurmaDisciplinasPage = useCallback(async (page = 1) => {
+    try {
+      const data = await apiJson(`/api/config/turma-disciplinas?page=${page}&limit=${pageLimit}`);
+      setTurmaDisciplinasPage(normalizePaginatedResponse(data, pageLimit));
+    } catch (err) { console.error(err); }
+  }, [pageLimit]);
+
+  const refreshAllData = useCallback(async () => {
+    await Promise.all([
+      loadReferenceData(),
+      loadPeriodosPage(periodos.page),
+      loadProfessoresPage(professoresPage.page),
+      loadDisciplinasPage(disciplinasPage.page),
+      loadTurmasPage(turmasPage.page),
+      loadTurmaDisciplinasPage(turmaDisciplinasPage.page),
+    ]);
+  }, [
+    loadReferenceData,
+    loadPeriodosPage,
+    loadProfessoresPage,
+    loadDisciplinasPage,
+    loadTurmasPage,
+    loadTurmaDisciplinasPage,
+    periodos.page,
+    professoresPage.page,
+    disciplinasPage.page,
+    turmasPage.page,
+    turmaDisciplinasPage.page,
+  ]);
+
+  const handleChangeLimit = (newLimit) => {
+    setPageLimit(newLimit);
+    setPeriodos((current) => ({ ...current, page: 1, limit: newLimit }));
+    setProfessoresPage((current) => ({ ...current, page: 1, limit: newLimit }));
+    setDisciplinasPage((current) => ({ ...current, page: 1, limit: newLimit }));
+    setTurmasPage((current) => ({ ...current, page: 1, limit: newLimit }));
+    setTurmaDisciplinasPage((current) => ({ ...current, page: 1, limit: newLimit }));
+  };
+
+  const resetProfessorForm = () => {
+    setProfForm({ nome: '', email: '', carga_horaria_max: 40 });
+    setEditingProfessorId(null);
+  };
+
+  const resetDisciplinaForm = () => {
+    setDiscForm({ nome: '', sigla: '', peso: 1 });
+    setEditingDisciplinaId(null);
+  };
+
+  const resetTurmaForm = () => {
+    setTurmaForm({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '' });
+    setEditingTurmaId(null);
+  };
+
+  const resetPeriodoForm = () => {
+    setPeriodoForm({ numero: '', hora_inicio: '', hora_fim: '', tipo: 'aula', turno_id: '' });
+    setEditingPeriodoId(null);
+  };
+
+  const resetTdForm = () => {
+    setTdForm({ turma_id: '', disciplina_id: '', professor_id: '', aulas_semana: '', tamanho_bloco: 1 });
+    setEditingTdId(null);
+  };
+
+  // Initial load only; later reloads are driven explicitly by mutations and page controls.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { refreshAllData(); }, []);
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 3000); };
 
   const handleAddPeriodo = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch('/api/config/periodos', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...periodoForm, numero: Number(periodoForm.numero), turno_id: Number(periodoForm.turno_id) }),
+      const isEditing = editingPeriodoId !== null;
+      const res = await apiFetch(isEditing ? `/api/config/periodos/${editingPeriodoId}` : '/api/config/periodos', {
+        method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...periodoForm,
+          numero: Number(periodoForm.numero),
+          turno_id: Number(periodoForm.turno_id),
+        }),
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
-      setPeriodoForm({ numero: '', hora_inicio: '', hora_fim: '', tipo: 'aula', turno_id: '' });
-      showMsg('Periodo adicionado!');
-      loadAll();
+      resetPeriodoForm();
+      showMsg(isEditing ? 'Periodo atualizado!' : 'Periodo adicionado!');
+      refreshAllData();
     } catch (err) { showMsg('Erro de conexao'); }
+  };
+
+  const handleEditPeriodo = (periodo) => {
+    setPeriodoForm({
+      numero: periodo.numero ?? '',
+      hora_inicio: periodo.hora_inicio?.slice(0, 5) || '',
+      hora_fim: periodo.hora_fim?.slice(0, 5) || '',
+      tipo: periodo.tipo || 'aula',
+      turno_id: periodo.turno_id ?? '',
+    });
+    setEditingPeriodoId(periodo.id);
+    setActiveTab('periodos');
+  };
+
+  const handleCancelPeriodoEdit = () => {
+    resetPeriodoForm();
   };
 
   const handleDeletePeriodo = async (id) => {
     try {
       await apiFetch(`/api/config/periodos/${id}`, { method: 'DELETE' });
-      loadAll();
+      refreshAllData();
     } catch (err) { showMsg('Erro ao remover'); }
   };
 
@@ -81,71 +210,128 @@ export default function ConfigPage() {
   const handleAddProfessor = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch('/api/config/professores', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...profForm, carga_horaria_max: Number(profForm.carga_horaria_max) }),
+      const isEditing = editingProfessorId !== null;
+      const res = await apiFetch(isEditing ? `/api/config/professores/${editingProfessorId}` : '/api/config/professores', {
+        method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...profForm,
+          carga_horaria_max: Number(profForm.carga_horaria_max || 40),
+        }),
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
-      setProfForm({ nome: '', email: '', carga_horaria_max: 40 });
-      showMsg('Professor adicionado!');
-      loadAll();
+      resetProfessorForm();
+      showMsg(isEditing ? 'Professor atualizado!' : 'Professor adicionado!');
+      refreshAllData();
     } catch (err) { showMsg('Erro de conexao'); }
+  };
+
+  const handleEditProfessor = (professor) => {
+    setProfForm({
+      nome: professor.nome || '',
+      email: professor.email || '',
+      carga_horaria_max: professor.carga_horaria_max ?? 40,
+    });
+    setEditingProfessorId(professor.id);
+    setActiveTab('professores');
+  };
+
+  const handleCancelProfessorEdit = () => {
+    resetProfessorForm();
   };
 
   const handleDeleteProfessor = async (id) => {
     try {
       await apiFetch(`/api/config/professores/${id}`, { method: 'DELETE' });
-      loadAll();
+      refreshAllData();
     } catch (err) { showMsg('Erro ao remover'); }
   };
 
   const handleAddDisciplina = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch('/api/config/disciplinas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...discForm, peso: Number(discForm.peso) }),
+      const isEditing = editingDisciplinaId !== null;
+      const res = await apiFetch(isEditing ? `/api/config/disciplinas/${editingDisciplinaId}` : '/api/config/disciplinas', {
+        method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...discForm,
+          peso: Number(discForm.peso || 1),
+        }),
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
-      setDiscForm({ nome: '', sigla: '', peso: 1 });
-      showMsg('Disciplina adicionada!');
-      loadAll();
+      resetDisciplinaForm();
+      showMsg(isEditing ? 'Disciplina atualizada!' : 'Disciplina adicionada!');
+      refreshAllData();
     } catch (err) { showMsg('Erro de conexao'); }
+  };
+
+  const handleEditDisciplina = (disciplina) => {
+    setDiscForm({
+      nome: disciplina.nome || '',
+      sigla: disciplina.sigla || '',
+      peso: disciplina.peso ?? 1,
+    });
+    setEditingDisciplinaId(disciplina.id);
+    setActiveTab('disciplinas');
+  };
+
+  const handleCancelDisciplinaEdit = () => {
+    resetDisciplinaForm();
   };
 
   const handleDeleteDisciplina = async (id) => {
     try {
       await apiFetch(`/api/config/disciplinas/${id}`, { method: 'DELETE' });
-      loadAll();
+      refreshAllData();
     } catch (err) { showMsg('Erro ao remover'); }
   };
 
   const handleAddTurma = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch('/api/config/turmas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...turmaForm, ano_letivo: Number(turmaForm.ano_letivo), turno_id: Number(turmaForm.turno_id) }),
+      const isEditing = editingTurmaId !== null;
+      const res = await apiFetch(isEditing ? `/api/config/turmas/${editingTurmaId}` : '/api/config/turmas', {
+        method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...turmaForm,
+          ano_letivo: Number(turmaForm.ano_letivo),
+          turno_id: Number(turmaForm.turno_id),
+        }),
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
-      setTurmaForm({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '' });
-      showMsg('Turma adicionada!');
-      loadAll();
+      resetTurmaForm();
+      showMsg(isEditing ? 'Turma atualizada!' : 'Turma adicionada!');
+      refreshAllData();
     } catch (err) { showMsg('Erro de conexao'); }
+  };
+
+  const handleEditTurma = (turma) => {
+    setTurmaForm({
+      nome: turma.nome || '',
+      serie: turma.serie || '',
+      ano_letivo: turma.ano_letivo ?? new Date().getFullYear(),
+      turno_id: turma.turno_id ?? '',
+    });
+    setEditingTurmaId(turma.id);
+    setActiveTab('turmas');
+  };
+
+  const handleCancelTurmaEdit = () => {
+    resetTurmaForm();
   };
 
   const handleDeleteTurma = async (id) => {
     try {
       await apiFetch(`/api/config/turmas/${id}`, { method: 'DELETE' });
-      loadAll();
+      refreshAllData();
     } catch (err) { showMsg('Erro ao remover'); }
   };
 
   const handleAddTD = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch('/api/config/turma-disciplinas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const isEditing = editingTdId !== null;
+      const res = await apiFetch(isEditing ? `/api/config/turma-disciplinas/${editingTdId}` : '/api/config/turma-disciplinas', {
+        method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           turma_id: Number(tdForm.turma_id),
           disciplina_id: Number(tdForm.disciplina_id),
@@ -155,17 +341,113 @@ export default function ConfigPage() {
         }),
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
-      setTdForm({ turma_id: '', disciplina_id: '', professor_id: '', aulas_semana: '', tamanho_bloco: 1 });
-      showMsg('Atribuicao adicionada!');
-      loadAll();
+      resetTdForm();
+      showMsg(isEditing ? 'Atribuição atualizada!' : 'Atribuição adicionada!');
+      refreshAllData();
     } catch (err) { showMsg('Erro de conexao'); }
+  };
+
+  const handleEditTD = (td) => {
+    setTdForm({
+      turma_id: td.turma_id ?? '',
+      disciplina_id: td.disciplina_id ?? '',
+      professor_id: td.professor_id ?? '',
+      aulas_semana: td.aulas_semana ?? '',
+      tamanho_bloco: td.tamanho_bloco ?? 1,
+    });
+    setEditingTdId(td.id);
+    setActiveTab('atribuicoes');
+  };
+
+  const handleCancelTDEdit = () => {
+    resetTdForm();
   };
 
   const handleDeleteTD = async (id) => {
     try {
       await apiFetch(`/api/config/turma-disciplinas/${id}`, { method: 'DELETE' });
-      loadAll();
+      refreshAllData();
     } catch (err) { showMsg('Erro ao remover'); }
+  };
+
+  const handlePeriodosPrevious = () => {
+    if (periodos.page > 1) {
+      const nextPage = periodos.page - 1;
+      setPeriodos((current) => ({ ...current, page: nextPage }));
+      loadPeriodosPage(nextPage);
+    }
+  };
+
+  const handlePeriodosNext = () => {
+    if (periodos.page < periodos.totalPages) {
+      const nextPage = periodos.page + 1;
+      setPeriodos((current) => ({ ...current, page: nextPage }));
+      loadPeriodosPage(nextPage);
+    }
+  };
+
+  const handleProfessoresPrevious = () => {
+    if (professoresPage.page > 1) {
+      const nextPage = professoresPage.page - 1;
+      setProfessoresPage((current) => ({ ...current, page: nextPage }));
+      loadProfessoresPage(nextPage);
+    }
+  };
+
+  const handleProfessoresNext = () => {
+    if (professoresPage.page < professoresPage.totalPages) {
+      const nextPage = professoresPage.page + 1;
+      setProfessoresPage((current) => ({ ...current, page: nextPage }));
+      loadProfessoresPage(nextPage);
+    }
+  };
+
+  const handleDisciplinasPrevious = () => {
+    if (disciplinasPage.page > 1) {
+      const nextPage = disciplinasPage.page - 1;
+      setDisciplinasPage((current) => ({ ...current, page: nextPage }));
+      loadDisciplinasPage(nextPage);
+    }
+  };
+
+  const handleDisciplinasNext = () => {
+    if (disciplinasPage.page < disciplinasPage.totalPages) {
+      const nextPage = disciplinasPage.page + 1;
+      setDisciplinasPage((current) => ({ ...current, page: nextPage }));
+      loadDisciplinasPage(nextPage);
+    }
+  };
+
+  const handleTurmasPrevious = () => {
+    if (turmasPage.page > 1) {
+      const nextPage = turmasPage.page - 1;
+      setTurmasPage((current) => ({ ...current, page: nextPage }));
+      loadTurmasPage(nextPage);
+    }
+  };
+
+  const handleTurmasNext = () => {
+    if (turmasPage.page < turmasPage.totalPages) {
+      const nextPage = turmasPage.page + 1;
+      setTurmasPage((current) => ({ ...current, page: nextPage }));
+      loadTurmasPage(nextPage);
+    }
+  };
+
+  const handleTDPrevious = () => {
+    if (turmaDisciplinasPage.page > 1) {
+      const nextPage = turmaDisciplinasPage.page - 1;
+      setTurmaDisciplinasPage((current) => ({ ...current, page: nextPage }));
+      loadTurmaDisciplinasPage(nextPage);
+    }
+  };
+
+  const handleTDNext = () => {
+    if (turmaDisciplinasPage.page < turmaDisciplinasPage.totalPages) {
+      const nextPage = turmaDisciplinasPage.page + 1;
+      setTurmaDisciplinasPage((current) => ({ ...current, page: nextPage }));
+      loadTurmaDisciplinasPage(nextPage);
+    }
   };
 
   return (
@@ -212,7 +494,10 @@ export default function ConfigPage() {
                 <td>{p.hora_inicio?.slice(0,5)}</td>
                 <td>{p.hora_fim?.slice(0,5)}</td>
                 <td><Badge variant={p.tipo}>{p.tipo}</Badge></td>
-                <td><Button variant="danger" onClick={() => handleDeletePeriodo(p.id)}>X</Button></td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button type="button" variant="info" onClick={() => handleEditPeriodo(p)}>Editar</Button>
+                  <Button type="button" variant="danger" onClick={() => handleDeletePeriodo(p.id)}>Deletar</Button>
+                </td>
               </tr>
             ))}
             </DataTable>
@@ -244,7 +529,10 @@ export default function ConfigPage() {
                 <td>{p.nome}</td>
                 <td>{p.email || '-'}</td>
                 <td>{p.carga_horaria_max}h</td>
-                <td><Button variant="danger" onClick={() => handleDeleteProfessor(p.id)}>X</Button></td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button type="button" variant="info" onClick={() => handleEditProfessor(p)}>Editar</Button>
+                  <Button type="button" variant="danger" onClick={() => handleDeleteProfessor(p.id)}>Deletar</Button>
+                </td>
               </tr>
             ))}
             </DataTable>
@@ -276,7 +564,10 @@ export default function ConfigPage() {
                 <td>{d.nome}</td>
                 <td>{d.sigla || '-'}</td>
                 <td>{d.peso}</td>
-                <td><Button variant="danger" onClick={() => handleDeleteDisciplina(d.id)}>X</Button></td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button type="button" variant="info" onClick={() => handleEditDisciplina(d)}>Editar</Button>
+                  <Button type="button" variant="danger" onClick={() => handleDeleteDisciplina(d.id)}>Deletar</Button>
+                </td>
               </tr>
             ))}
             </DataTable>
@@ -314,7 +605,10 @@ export default function ConfigPage() {
                 <td>{t.serie}</td>
                 <td>{t.ano_letivo}</td>
                 <td>{t.turno_nome}</td>
-                <td><Button variant="danger" onClick={() => handleDeleteTurma(t.id)}>X</Button></td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button type="button" variant="info" onClick={() => handleEditTurma(t)}>Editar</Button>
+                  <Button type="button" variant="danger" onClick={() => handleDeleteTurma(t.id)}>Deletar</Button>
+                </td>
               </tr>
             ))}
             </DataTable>
@@ -360,7 +654,10 @@ export default function ConfigPage() {
                 <td>{td.professor_nome}</td>
                 <td>{td.aulas_semana}</td>
                 <td>{td.tamanho_bloco}</td>
-                <td><Button variant="danger" onClick={() => handleDeleteTD(td.id)}>X</Button></td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button type="button" variant="info" onClick={() => handleEditTD(td)}>Editar</Button>
+                  <Button type="button" variant="danger" onClick={() => handleDeleteTD(td.id)}>Deletar</Button>
+                </td>
               </tr>
             ))}
             </DataTable>
