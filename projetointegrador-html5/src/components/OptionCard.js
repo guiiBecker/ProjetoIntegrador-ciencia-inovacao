@@ -4,7 +4,7 @@ import TimetableGrid from './TimetableGrid';
 import './OptionCard.css';
 
 const STRATEGY_LABELS = {
-  greedy_best_preference: 'Melhor Preferencia (Guloso)',
+  greedy_best_preference: 'Melhor Preferencia',
   balanced_distribution: 'Distribuicao Equilibrada',
 };
 
