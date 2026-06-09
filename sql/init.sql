@@ -182,6 +182,22 @@ CREATE TABLE schedule_option_item (
     UNIQUE(option_id, turma_disciplina_id, time_slot_id)
 );
 
+-- =========================
+-- RESTRICOES SOFT (pesos ajustaveis pelo moderador)
+-- Cada linha e uma restricao soft que o gerador de grade pondera. O moderador
+-- ajusta o `peso` (0 = restricao ignorada; maior = mais importante). O worker
+-- le esta tabela a cada geracao; os defaults espelham os pesos historicos do
+-- codigo do scheduler.
+-- =========================
+CREATE TABLE soft_constraint (
+    id SERIAL PRIMARY KEY,
+    codigo VARCHAR(10) NOT NULL UNIQUE,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    peso NUMERIC(5,2) NOT NULL DEFAULT 1 CHECK (peso >= 0),
+    atualizado_em TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- ============================================================
 -- INDICES
 -- ============================================================
@@ -218,3 +234,16 @@ INSERT INTO dia_semana (nome) VALUES
     ('Quarta'),
     ('Quinta'),
     ('Sexta');
+
+-- Restricoes soft com pesos default (espelham os pesos historicos do scheduler).
+INSERT INTO soft_constraint (codigo, nome, descricao, peso) VALUES
+    ('SC1', 'Concentracao diaria da disciplina',
+     'Penaliza muitas aulas da mesma disciplina no mesmo dia para uma turma.', 3),
+    ('SC2', 'Aulas consecutivas da disciplina',
+     'Penaliza sequencias longas de periodos seguidos da mesma disciplina.', 3),
+    ('SC5', 'Janela ociosa do professor',
+     'Penaliza horarios vagos entre aulas do professor no mesmo dia.', 1),
+    ('SC6', 'Disciplina pesada no ultimo periodo',
+     'Penaliza disciplinas cognitivamente pesadas alocadas no ultimo periodo do dia.', 1.5),
+    ('SC7', 'Disciplina pratica no primeiro periodo',
+     'Penaliza disciplinas praticas alocadas no primeiro periodo do dia.', 1);

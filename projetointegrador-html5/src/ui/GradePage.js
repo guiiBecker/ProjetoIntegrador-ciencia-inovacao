@@ -6,6 +6,11 @@ import Spinner from '../components/Spinner';
 import OptionCard from '../components/OptionCard';
 import './GradePage.css';
 
+const STRATEGY_LABELS = {
+  greedy_best_preference: 'Melhor Preferencia',
+  balanced_distribution: 'Distribuicao Equilibrada',
+};
+
 export default function GradePage() {
   const [requests, setRequests] = useState([]);
   const [activeRequest, setActiveRequest] = useState(null);
@@ -13,6 +18,8 @@ export default function GradePage() {
   const [polling, setPolling] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editError, setEditError] = useState('');
+  const [activeOptionId, setActiveOptionId] = useState(null);
+  const [activeTurmaByOption, setActiveTurmaByOption] = useState({});
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -30,6 +37,16 @@ export default function GradePage() {
   }, []);
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+  useEffect(() => {
+    const options = activeRequest?.options || [];
+    if (options.length === 0) { setActiveOptionId(null); return; }
+    const stillThere = options.some(o => o.id === activeOptionId);
+    if (!stillThere) {
+      const selected = options.find(o => o.selected);
+      setActiveOptionId((selected || options[0]).id);
+    }
+  }, [activeRequest, activeOptionId]);
 
   useEffect(() => {
     if (!polling || !activeRequest) return;
@@ -175,12 +192,28 @@ export default function GradePage() {
           {activeRequest && (activeRequest.status === 'completed' || activeRequest.status === 'confirmed') && activeRequest.options && (
             <div className="options-container">
               <div className="options-header-bar">
-                <h2>{isConfirmed ? `Grade Confirmada - Requisicao #${activeRequest.id}` : `2 Opcoes de Grade - Requisicao #${activeRequest.id}`}</h2>
+                <h2>{isConfirmed ? `Grade Confirmada - Requisicao #${activeRequest.id}` : `Opcoes de Grade - Requisicao #${activeRequest.id}`}</h2>
                 {!isConfirmed && hasSelectedOption && <Button variant="confirm" onClick={handleConfirm}>Confirmar Grade Final</Button>}
               </div>
               {isConfirmed && <div className="confirmed-banner">Grade salva com sucesso na base de dados.</div>}
               {editError && <div className="edit-error">{editError}</div>}
-              {activeRequest.options.map(opt => (
+
+              {!isConfirmed && (
+                <div className="option-tabs" role="tablist">
+                  {activeRequest.options.map(opt => (
+                    <button key={opt.id}
+                      role="tab"
+                      aria-selected={activeOptionId === opt.id}
+                      className={`option-tab ${activeOptionId === opt.id ? 'active' : ''} ${opt.selected ? 'is-selected' : ''}`}
+                      onClick={() => { setActiveOptionId(opt.id); setSelectedItem(null); setEditError(''); }}>
+                      <span className="option-tab-label">{STRATEGY_LABELS[opt.strategy] || opt.strategy}</span>
+                      <span className="option-tab-meta">Score {opt.score}{opt.selected ? ' • Selecionada' : ''}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {activeRequest.options.filter(opt => isConfirmed ? opt.selected : opt.id === activeOptionId).map(opt => (
                 <OptionCard key={opt.id} option={opt} onSelect={handleSelect}
                   isSelected={opt.selected} editable={!isConfirmed && opt.selected}
                   selectedItem={selectedItem} onCellClick={handleCellClick}
@@ -188,7 +221,12 @@ export default function GradePage() {
                   onCellDrop={handleCellClick}
                   onCellDragEnd={() => { setSelectedItem(null); }}
                   professorAvailability={activeRequest.professorAvailability}
-                  isConfirmed={isConfirmed} />
+                  isConfirmed={isConfirmed}
+                  activeTurma={activeTurmaByOption[opt.id]}
+                  onTurmaChange={(turma) => {
+                    setSelectedItem(null); setEditError('');
+                    setActiveTurmaByOption(prev => ({ ...prev, [opt.id]: turma }));
+                  }} />
               ))}
             </div>
           )}

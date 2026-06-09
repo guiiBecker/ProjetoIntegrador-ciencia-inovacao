@@ -278,4 +278,42 @@ export class ConfigController {
     if (!ok) throw new HttpException('Atribuicao nao encontrada', HttpStatus.NOT_FOUND);
     return { success: true };
   }
+
+  // ===================== RESTRICOES SOFT =====================
+
+  @Get('soft-constraints')
+  async listSoftConstraints(): Promise<unknown> {
+    return this.configService.listSoftConstraints();
+  }
+
+  @Put('soft-constraints')
+  async updateSoftConstraints(
+    @Body() body: { items: Array<{ codigo: string; peso: number }> },
+  ): Promise<unknown> {
+    if (!body || !Array.isArray(body.items) || body.items.length === 0) {
+      throw new HttpException('Campo items (lista) e obrigatorio', HttpStatus.BAD_REQUEST);
+    }
+    for (const it of body.items) {
+      if (!it.codigo || typeof it.peso !== 'number' || !Number.isFinite(it.peso) || it.peso < 0) {
+        throw new HttpException(
+          'Cada item precisa de codigo e peso numerico >= 0',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+    return this.configService.updateSoftConstraints(body.items);
+  }
+
+  @Put('soft-constraints/:codigo')
+  async updateSoftConstraint(
+    @Param('codigo') codigo: string,
+    @Body() body: { peso: number },
+  ): Promise<unknown> {
+    if (typeof body.peso !== 'number' || !Number.isFinite(body.peso) || body.peso < 0) {
+      throw new HttpException('peso deve ser um numero >= 0', HttpStatus.BAD_REQUEST);
+    }
+    const updated = await this.configService.updateSoftConstraint(codigo, body.peso);
+    if (!updated) throw new HttpException('Restricao nao encontrada', HttpStatus.NOT_FOUND);
+    return updated;
+  }
 }

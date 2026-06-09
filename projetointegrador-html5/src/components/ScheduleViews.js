@@ -1,3 +1,4 @@
+import { disciplineColorForItem } from '../utils/disciplineColors';
 import './ScheduleViews.css';
 
 function buildAxes(items) {
@@ -5,10 +6,14 @@ function buildAxes(items) {
   const periodoMap = new Map();
   for (const it of items) {
     if (!diaMap.has(it.dia_id)) diaMap.set(it.dia_id, it.dia_nome);
-    if (!periodoMap.has(it.periodo_numero)) periodoMap.set(it.periodo_numero, it.hora_inicio);
+    if (!periodoMap.has(it.periodo_numero)) {
+      periodoMap.set(it.periodo_numero, { inicio: it.hora_inicio, fim: it.hora_fim });
+    }
   }
   const dias = [...diaMap.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.id - b.id);
-  const periodos = [...periodoMap.entries()].map(([numero, hora]) => ({ numero, hora })).sort((a, b) => a.numero - b.numero);
+  const periodos = [...periodoMap.entries()]
+    .map(([numero, horas]) => ({ numero, ...horas }))
+    .sort((a, b) => a.numero - b.numero);
   return { dias, periodos };
 }
 
@@ -37,13 +42,21 @@ function ViewGrid({ title, items, renderCell, multiPerCell }) {
         <tbody>
           {periodos.map((p) => (
             <tr key={p.numero}>
-              <td className="periodo-cell">{p.hora?.slice(0, 5)}</td>
+              <td className="periodo-cell">
+                <span className="periodo-num">{p.numero}º</span>
+                <span className="periodo-inicio">{p.inicio?.slice(0, 5)}</span>
+                {p.fim && <span className="periodo-fim">{p.fim.slice(0, 5)}</span>}
+              </td>
               {dias.map((d) => {
                 const cell = grid[`${d.id}-${p.numero}`];
                 const filled = multiPerCell ? !!(cell && cell.length) : !!cell;
+                // Single-cell views tint the whole cell by discipline; the geral
+                // view colors each stacked item instead (see renderGeralCell).
+                const color = filled && !multiPerCell ? disciplineColorForItem(cell) : null;
+                const style = color ? { background: color.bg, borderLeft: `4px solid ${color.border}` } : undefined;
                 return (
-                  <td key={d.id} className={filled ? 'filled-cell' : 'empty-cell'}>
-                    {filled ? renderCell(cell) : '-'}
+                  <td key={d.id} className={filled ? 'filled-cell' : 'empty-cell'} style={style}>
+                    {filled ? renderCell(cell, color) : <span className="empty-mark">·</span>}
                   </td>
                 );
               })}
@@ -55,28 +68,35 @@ function ViewGrid({ title, items, renderCell, multiPerCell }) {
   );
 }
 
-const renderTurmaCell = (cell) => (
-  <>
-    <span className="cell-primary">{cell.disciplina_sigla}</span>
+const renderTurmaCell = (cell, color) => (
+  <span title={`${cell.disciplina_nome || cell.disciplina_sigla} — ${cell.professor_nome}`}>
+    <span className="cell-primary" style={color ? { color: color.text } : undefined}>{cell.disciplina_sigla}</span>
+    {cell.disciplina_nome && <span className="cell-name">{cell.disciplina_nome}</span>}
     <span className="cell-secondary">{cell.professor_nome}</span>
-  </>
+  </span>
 );
 
-const renderProfessorCell = (cell) => (
-  <>
-    <span className="cell-primary">{cell.disciplina_sigla}</span>
+const renderProfessorCell = (cell, color) => (
+  <span title={`${cell.disciplina_nome || cell.disciplina_sigla} — ${cell.turma_nome}`}>
+    <span className="cell-primary" style={color ? { color: color.text } : undefined}>{cell.disciplina_sigla}</span>
+    {cell.disciplina_nome && <span className="cell-name">{cell.disciplina_nome}</span>}
     <span className="cell-secondary">{cell.turma_nome}</span>
-  </>
+  </span>
 );
 
 const renderGeralCell = (cells) => (
   <div className="geral-stack">
-    {cells.map((c) => (
-      <div key={c.item_id} className="geral-item">
-        <span className="cell-primary">{c.turma_nome}</span>
-        <span className="cell-secondary">{c.disciplina_sigla} - {c.professor_nome}</span>
-      </div>
-    ))}
+    {cells.map((c) => {
+      const color = disciplineColorForItem(c);
+      return (
+        <div key={c.item_id} className="geral-item"
+          title={`${c.turma_nome}: ${c.disciplina_nome || c.disciplina_sigla} — ${c.professor_nome}`}
+          style={{ borderLeftColor: color.border, background: color.bg }}>
+          <span className="cell-primary" style={{ color: color.text }}>{c.turma_nome}</span>
+          <span className="cell-secondary">{c.disciplina_sigla} - {c.professor_nome}</span>
+        </div>
+      );
+    })}
   </div>
 );
 

@@ -66,19 +66,41 @@ export interface PlacedBlock {
 // ===================== Tunable weights =====================
 // All weights are named so they can be calibrated without touching logic.
 
-// ---- Placement ranking (steers which candidate is chosen; NOT the final score) ----
-const DAY_CLUSTER_WEIGHT = 3;    // SC1 same-discipline same-day, used in ranking + score
-const PERIOD_CLUSTER_WEIGHT = 3; // SC2 same-discipline same-period, ranking + score
+// ---- Soft-constraint weights (moderator-tunable) ----
+// Each weight scales one soft constraint. SC1/SC2 steer both candidate ranking
+// and the final score; SC5/SC6/SC7 only subtract from the final score. A weight
+// of 0 effectively disables that constraint. Defaults mirror the historical
+// hard-coded values and are overridden per request from the soft_constraint
+// table (see loadSoftWeights).
+export interface SoftWeights {
+  dayCluster: number;     // SC1 same-discipline same-day
+  periodCluster: number;  // SC2 same-discipline consecutive periods
+  window: number;         // SC5 professor internal idle window (per free aula slot)
+  heavyLast: number;      // SC6 heavy discipline placed in the last period
+  practicalFirst: number; // SC7 practical discipline placed in the first period
+}
+
+export const DEFAULT_WEIGHTS: SoftWeights = {
+  dayCluster: 3,
+  periodCluster: 3,
+  window: 1,
+  heavyLast: 1.5,
+  practicalFirst: 1,
+};
+
+// Maps soft_constraint.codigo rows to the SoftWeights field they tune.
+const CODE_TO_WEIGHT: Record<string, keyof SoftWeights> = {
+  SC1: 'dayCluster',
+  SC2: 'periodCluster',
+  SC5: 'window',
+  SC6: 'heavyLast',
+  SC7: 'practicalFirst',
+};
 
 // ---- Final score: positive components (must sum to 1) ----
 const W_PLACEMENT = 0.6;
 const W_SPREAD = 0.25;
 const W_PREFERENCE = 0.15;
-
-// ---- Final score: soft-constraint penalties (points subtracted from a 0..100 base) ----
-const WINDOW_WEIGHT = 1;          // SC5 professor internal idle window (per free aula slot)
-const HEAVY_LAST_WEIGHT = 1.5;    // SC6 heavy discipline placed in the last period
-const PRACTICAL_FIRST_WEIGHT = 1; // SC7 practical discipline placed in the first period
 
 const HEAVY_PESO_THRESHOLD = 3; // disciplina.peso >= this counts as cognitively heavy (SC6)
 // SC7: practical disciplines identified by sigla prefix (EDF, Arte, Computacao, etc.).
@@ -402,6 +424,7 @@ function softPenalty(
   tds: TurmaDisciplina[],
   assignments: Assignment[],
   slots: TimeSlotInfo[],
+  weights: SoftWeights,
 ): number {
   const tdById = new Map<number, TurmaDisciplina>();
   for (const td of tds) tdById.set(td.id, td);
@@ -448,7 +471,7 @@ function softPenalty(
 
   // SC1: same-discipline daily clustering.
   for (const n of dayCount.values()) {
-    penalty += DAY_CLUSTER_WEIGHT * dayClusterUnits(n);
+    penalty += weights.dayCluster * dayClusterUnits(n);
   }
 
   // SC2: consecutive same-discipline runs (by aula position, so recreios break runs).
@@ -459,7 +482,7 @@ function softPenalty(
       if (i < positions.length && positions[i] === positions[i - 1] + 1) {
         run++;
       } else {
-        penalty += PERIOD_CLUSTER_WEIGHT * consecutiveUnits(run);
+        penalty += weights.periodCluster * consecutiveUnits(run);
         run = 1;
       }
     }
@@ -471,12 +494,12 @@ function softPenalty(
     positions.sort((a, b) => a - b);
     const span = positions[positions.length - 1] - positions[0] + 1;
     const windows = span - positions.length;
-    penalty += WINDOW_WEIGHT * windows;
+    penalty += weights.window * windows;
   }
 
   // SC6 / SC7.
-  penalty += HEAVY_LAST_WEIGHT * heavyLast;
-  penalty += PRACTICAL_FIRST_WEIGHT * practicalFirst;
+  penalty += weights.heavyLast * heavyLast;
+  penalty += weights.practicalFirst * practicalFirst;
 
   return penalty;
 }
@@ -489,6 +512,7 @@ export function composeScore(
   assignments: Assignment[],
   slots: TimeSlotInfo[],
   profDispMap: Map<number, Map<number, ProfDisp>>,
+  weights: SoftWeights = DEFAULT_WEIGHTS,
 ): number {
   const totalNeeded = tds.reduce((s, t) => s + t.aulas_semana, 0);
   if (totalNeeded === 0) return 0;
@@ -513,7 +537,7 @@ export function composeScore(
   const prefRatio = Math.max(0, Math.min(1, (prefAvg - 1) / 4)); // 1..5 -> 0..1
 
   const base = (W_PLACEMENT * placementRatio + W_SPREAD * spreadRatio + W_PREFERENCE * prefRatio) * 100;
-  const penalty = softPenalty(tds, assignments, slots);
+  const penalty = softPenalty(tds, assignments, slots, weights);
   return Math.max(0, Math.min(100, base - penalty));
 }
 
@@ -549,6 +573,25 @@ async function loadData(pool: Pool) {
   };
 }
 
+// Reads moderator-tuned soft-constraint weights from the soft_constraint table,
+// merged over the defaults. Unknown codigos are ignored and missing ones keep
+// their default. If the table is absent (older schema), defaults are used so the
+// scheduler keeps working.
+export async function loadSoftWeights(pool: Pool): Promise<SoftWeights> {
+  const weights: SoftWeights = { ...DEFAULT_WEIGHTS };
+  try {
+    const res = await pool.query('SELECT codigo, peso FROM soft_constraint');
+    for (const row of res.rows) {
+      const key = CODE_TO_WEIGHT[row.codigo as string];
+      const peso = Number(row.peso);
+      if (key && Number.isFinite(peso) && peso >= 0) weights[key] = peso;
+    }
+  } catch (err) {
+    console.warn('[Scheduler] soft_constraint weights unavailable, using defaults:', err);
+  }
+  return weights;
+}
+
 // ===================== Candidate scoring & selection =====================
 
 interface ScoredCandidate {
@@ -558,10 +601,10 @@ interface ScoredCandidate {
 
 // Greedy desirability of a candidate: high professor preference, low same-day /
 // same-period clustering for this discipline. Soft only.
-function greedyCandidateScore(c: BlockCandidate): number {
+function greedyCandidateScore(c: BlockCandidate, weights: SoftWeights): number {
   return c.avgPref
-    - DAY_CLUSTER_WEIGHT * c.dayClusterCount * c.dayClusterCount
-    - PERIOD_CLUSTER_WEIGHT * c.periodPenalty;
+    - weights.dayCluster * c.dayClusterCount * c.dayClusterCount
+    - weights.periodCluster * c.periodPenalty;
 }
 
 type CandidatePicker = (scored: ScoredCandidate[], rng: () => number) => BlockCandidate;
@@ -605,6 +648,7 @@ function buildGreedy(
   profDispMap: Map<number, Map<number, ProfDisp>>,
   pick: CandidatePicker,
   rng: () => number,
+  weights: SoftWeights,
 ): PlacedBlock[] {
   const state = newState();
 
@@ -627,7 +671,7 @@ function buildGreedy(
       const candidates = findValidBlocks(td, blockSize, slotsByDay, profDispMap, state);
       if (candidates.length === 0) break;
       const ranked: ScoredCandidate[] = candidates
-        .map((cand) => ({ cand, score: greedyCandidateScore(cand) }))
+        .map((cand) => ({ cand, score: greedyCandidateScore(cand, weights) }))
         .sort((a, b) => b.score - a.score);
       const chosen = pick(ranked, rng);
       markSlots(state, td, chosen.diaId, chosen.slots);
@@ -645,13 +689,14 @@ export function strategyGreedy(
   tds: TurmaDisciplina[],
   slots: TimeSlotInfo[],
   profDisps: ProfDisp[],
+  weights: SoftWeights = DEFAULT_WEIGHTS,
 ): ScheduleResult {
   const profDispMap = buildProfDispMap(profDisps);
-  const assignments = blocksToAssignments(buildGreedy(tds, slots, profDispMap, pickTop, Math.random));
+  const assignments = blocksToAssignments(buildGreedy(tds, slots, profDispMap, pickTop, Math.random, weights));
   return {
     strategy: 'greedy_best_preference',
     assignments,
-    score: composeScore(tds, assignments, slots, profDispMap),
+    score: composeScore(tds, assignments, slots, profDispMap, weights),
   };
 }
 
@@ -662,6 +707,7 @@ export function strategyBalanced(
   tds: TurmaDisciplina[],
   slots: TimeSlotInfo[],
   profDisps: ProfDisp[],
+  weights: SoftWeights = DEFAULT_WEIGHTS,
 ): ScheduleResult {
   const profDispMap = buildProfDispMap(profDisps);
   const state = newState();
@@ -683,10 +729,10 @@ export function strategyBalanced(
         const loadA = turmaLoad.get(a.diaId) || 0;
         const loadB = turmaLoad.get(b.diaId) || 0;
         if (loadA !== loadB) return loadA - loadB;
-        const penA = DAY_CLUSTER_WEIGHT * a.dayClusterCount * a.dayClusterCount
-          + PERIOD_CLUSTER_WEIGHT * a.periodPenalty;
-        const penB = DAY_CLUSTER_WEIGHT * b.dayClusterCount * b.dayClusterCount
-          + PERIOD_CLUSTER_WEIGHT * b.periodPenalty;
+        const penA = weights.dayCluster * a.dayClusterCount * a.dayClusterCount
+          + weights.periodCluster * a.periodPenalty;
+        const penB = weights.dayCluster * b.dayClusterCount * b.dayClusterCount
+          + weights.periodCluster * b.periodPenalty;
         if (penA !== penB) return penA - penB;
         return b.avgPref - a.avgPref;
       });
@@ -702,7 +748,7 @@ export function strategyBalanced(
   return {
     strategy: 'balanced_distribution',
     assignments: allAssignments,
-    score: composeScore(tds, allAssignments, slots, profDispMap),
+    score: composeScore(tds, allAssignments, slots, profDispMap, weights),
   };
 }
 
@@ -736,11 +782,12 @@ export function strategyAnnealing(
   slots: TimeSlotInfo[],
   profDisps: ProfDisp[],
   seed = Date.now(),
+  weights: SoftWeights = DEFAULT_WEIGHTS,
 ): ScheduleResult {
   const profDispMap = buildProfDispMap(profDisps);
   const rng = mulberry32(seed);
 
-  const blocks = buildGreedy(tds, slots, profDispMap, pickWeightedTopK, rng);
+  const blocks = buildGreedy(tds, slots, profDispMap, pickWeightedTopK, rng, weights);
 
   // Occupancy maps kept in sync with `blocks` as moves are applied/undone.
   const turmaSlots = new Map<number, Set<number>>();
@@ -874,7 +921,7 @@ export function strategyAnnealing(
     }
   };
 
-  const score = (): number => composeScore(tds, blocksToAssignments(blocks), slots, profDispMap);
+  const score = (): number => composeScore(tds, blocksToAssignments(blocks), slots, profDispMap, weights);
 
   let currentScore = score();
   let best = blocks.map((b) => ({ td: b.td, slots: [...b.slots] }));
@@ -970,11 +1017,13 @@ export async function generateSchedules(
       return;
     }
 
+    const weights = await loadSoftWeights(pool);
+
     const results: ScheduleResult[] = [
-      strategyGreedy(turmaDisciplinas, timeSlots, profDisp),
-      strategyBalanced(turmaDisciplinas, timeSlots, profDisp),
+      strategyGreedy(turmaDisciplinas, timeSlots, profDisp, weights),
+      strategyBalanced(turmaDisciplinas, timeSlots, profDisp, weights),
       // Option B refiner. Seed with requestId so the same request reproduces it.
-      strategyAnnealing(turmaDisciplinas, timeSlots, profDisp, requestId),
+      strategyAnnealing(turmaDisciplinas, timeSlots, profDisp, requestId, weights),
     ];
 
     for (const result of results) {

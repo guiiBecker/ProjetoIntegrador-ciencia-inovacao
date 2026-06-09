@@ -17,6 +17,7 @@ const TABS = [
   { key: 'disciplinas', label: 'Disciplinas' },
   { key: 'turmas', label: 'Turmas' },
   { key: 'atribuicoes', label: 'Atribuicoes' },
+  { key: 'restricoes', label: 'Restricoes' },
 ];
 
 export default function ConfigPage() {
@@ -31,6 +32,7 @@ export default function ConfigPage() {
   const [disciplinasPage, setDisciplinasPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [turmasPage, setTurmasPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [turmaDisciplinasPage, setTurmaDisciplinasPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
+  const [softConstraints, setSoftConstraints] = useState([]);
   const [msg, setMsg] = useState('');
   const [activeTab, setActiveTab] = useState('periodos');
   const [editingProfessorId, setEditingProfessorId] = useState(null);
@@ -98,6 +100,13 @@ export default function ConfigPage() {
     } catch (err) { console.error(err); }
   }, [pageLimit]);
 
+  const loadSoftConstraints = useCallback(async () => {
+    try {
+      const data = await apiJson('/api/config/soft-constraints');
+      setSoftConstraints(Array.isArray(data) ? data : []);
+    } catch (err) { console.error(err); }
+  }, []);
+
   const refreshAllData = useCallback(async () => {
     await Promise.all([
       loadReferenceData(),
@@ -106,6 +115,7 @@ export default function ConfigPage() {
       loadDisciplinasPage(disciplinasPage.page),
       loadTurmasPage(turmasPage.page),
       loadTurmaDisciplinasPage(turmaDisciplinasPage.page),
+      loadSoftConstraints(),
     ]);
   }, [
     loadReferenceData,
@@ -114,6 +124,7 @@ export default function ConfigPage() {
     loadDisciplinasPage,
     loadTurmasPage,
     loadTurmaDisciplinasPage,
+    loadSoftConstraints,
     periodos.page,
     professoresPage.page,
     disciplinasPage.page,
@@ -429,6 +440,30 @@ export default function ConfigPage() {
       await apiFetch(`/api/config/turma-disciplinas/${id}`, { method: 'DELETE' });
       refreshAllData();
     } catch (err) { showMsg('Erro ao remover'); }
+  };
+
+  const setSoftConstraintPeso = (codigo, peso) => {
+    setSoftConstraints((current) =>
+      current.map((sc) => (sc.codigo === codigo ? { ...sc, peso } : sc)),
+    );
+  };
+
+  const handleSaveSoftConstraints = async () => {
+    const items = softConstraints.map((sc) => ({ codigo: sc.codigo, peso: Number(sc.peso) }));
+    if (items.some((it) => !Number.isFinite(it.peso) || it.peso < 0)) {
+      showMsg('Pesos devem ser numeros maiores ou iguais a zero.');
+      return;
+    }
+    try {
+      const res = await apiFetch('/api/config/soft-constraints', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
+      const data = await res.json();
+      if (Array.isArray(data)) setSoftConstraints(data);
+      showMsg('Pesos das restricoes salvos!');
+    } catch (err) { showMsg('Erro de conexao'); }
   };
 
   const handlePeriodosPrevious = () => {
@@ -747,6 +782,45 @@ export default function ConfigPage() {
               </tr>
             ))}
             </DataTable>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'restricoes' && (
+        <div className="config-section config-section--stacked">
+          <h3>Restricoes Soft (pesos do gerador)</h3>
+          <p className="config-hint">
+            Ajuste a importancia de cada restricao soft usada ao gerar a grade. Peso maior
+            torna a restricao mais forte; peso 0 a desativa. As mudancas valem para as
+            proximas geracoes de grade.
+          </p>
+          <div className="data-table-wrapper">
+            <DataTable
+              headers={['Codigo', 'Restricao', 'Descricao', 'Peso']}
+              rows={softConstraints}
+              emptyText="Nenhuma restricao cadastrada"
+            >
+              {softConstraints.map((sc) => (
+                <tr key={sc.codigo}>
+                  <td>{sc.codigo}</td>
+                  <td>{sc.nome}</td>
+                  <td>{sc.descricao}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      style={{ width: '5rem' }}
+                      value={sc.peso}
+                      onChange={(e) => setSoftConstraintPeso(sc.codigo, e.target.value)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+          </div>
+          <div>
+            <Button onClick={handleSaveSoftConstraints}>Salvar pesos</Button>
           </div>
         </div>
       )}

@@ -1,6 +1,5 @@
 .timetable-wrapper {
-  flex: 0 0 auto;
-  min-width: 520px;
+  width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-neutral-200);
@@ -28,11 +27,13 @@
 .timetable th,
 .timetable td {
   border: 1px solid var(--color-neutral-200);
-  padding: 0.9rem 0.8rem;
+  padding: 1rem 0.9rem;
   text-align: center;
   word-break: break-word;
   vertical-align: middle;
   white-space: nowrap;
+  min-width: 120px;
+  height: 64px;
 }
 
 .timetable th {
@@ -53,28 +54,66 @@
   color: var(--color-neutral-900);
   letter-spacing: 0.3px;
   white-space: nowrap;
+  line-height: 1.25;
+}
+
+.periodo-cell .periodo-num {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+}
+
+.periodo-cell .periodo-inicio {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.periodo-cell .periodo-fim {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-neutral-500, var(--color-neutral-700));
+}
+
+.empty-mark {
+  color: var(--color-neutral-300);
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .filled-cell {
   background: var(--color-primary-light);
-  padding: 0.9rem 0.8rem !important;
+  padding: 0.85rem 0.7rem !important;
   white-space: normal;
 }
 
 .filled-cell .disc-sigla {
   display: block;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-primary-dark);
-  font-size: 1rem;
-  line-height: 1.4;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+}
+
+.filled-cell .disc-nome {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-neutral-700);
+  margin-top: 0.15rem;
+  line-height: 1.25;
 }
 
 .filled-cell .prof-nome {
   display: block;
-  font-size: 0.85rem;
-  color: var(--color-neutral-700);
-  margin-top: 0.3rem;
-  line-height: 1.3;
+  font-size: 0.75rem;
+  color: var(--color-neutral-500, var(--color-neutral-700));
+  margin-top: 0.25rem;
+  line-height: 1.2;
+  font-style: italic;
 }
 
 .empty-cell {
