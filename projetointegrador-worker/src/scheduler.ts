@@ -1,4 +1,6 @@
 import { Pool } from 'pg';
+import { execFile } from 'child_process';
+import * as path from 'path';
 
 // ===================== Types =====================
 
@@ -995,6 +997,79 @@ export function strategyAnnealing(
   };
 }
 
+// ===================== OR-Tools (CP-SAT) =====================
+
+// Wall-clock budget handed to the Python solver, plus headroom for the spawn so
+// execFile doesn't kill it mid-solve.
+const ORTOOLS_TIME_BUDGET_MS = 5000;
+const ORTOOLS_SPAWN_TIMEOUT_MS = ORTOOLS_TIME_BUDGET_MS + 15000;
+
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
+const SOLVER_SCRIPT = path.join(__dirname, '..', 'solver', 'cpsat_solver.py');
+
+interface SolverOutput {
+  assignments: Assignment[];
+  status: string;
+}
+
+// Runs the CP-SAT sidecar, piping the problem as JSON to stdin and parsing the
+// assignments from stdout. Rejects if Python or ortools is unavailable, the
+// process errors, or the output can't be parsed — callers treat that as "skip
+// this strategy" rather than failing the whole request.
+function runCpSatSolver(
+  tds: TurmaDisciplina[],
+  slots: TimeSlotInfo[],
+  profDisps: ProfDisp[],
+  weights: SoftWeights,
+): Promise<SolverOutput> {
+  const input = JSON.stringify({
+    tds,
+    slots,
+    profDisp: profDisps,
+    weights,
+    timeBudgetMs: ORTOOLS_TIME_BUDGET_MS,
+  });
+
+  return new Promise((resolve, reject) => {
+    const child = execFile(
+      PYTHON_BIN,
+      [SOLVER_SCRIPT],
+      { timeout: ORTOOLS_SPAWN_TIMEOUT_MS, maxBuffer: 64 * 1024 * 1024 },
+      (err, stdout, stderr) => {
+        if (err) {
+          reject(new Error(`CP-SAT solver failed: ${err.message}${stderr ? ` | ${stderr}` : ''}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(stdout) as SolverOutput);
+        } catch (parseErr) {
+          reject(new Error(`CP-SAT solver returned invalid JSON: ${(parseErr as Error).message}`));
+        }
+      },
+    );
+    child.stdin?.end(input);
+  });
+}
+
+// Strategy 4: constraint programming via Google OR-Tools CP-SAT.
+// Delegates placement to the Python sidecar, then scores the returned
+// assignments with the same composeScore as the heuristic strategies so all
+// options are directly comparable.
+export async function strategyOrTools(
+  tds: TurmaDisciplina[],
+  slots: TimeSlotInfo[],
+  profDisps: ProfDisp[],
+  weights: SoftWeights = DEFAULT_WEIGHTS,
+): Promise<ScheduleResult> {
+  const profDispMap = buildProfDispMap(profDisps);
+  const { assignments } = await runCpSatSolver(tds, slots, profDisps, weights);
+  return {
+    strategy: 'or_tools_cpsat',
+    assignments,
+    score: composeScore(tds, assignments, slots, profDispMap, weights),
+  };
+}
+
 // ===================== Main Entry =====================
 
 export async function generateSchedules(
@@ -1025,6 +1100,14 @@ export async function generateSchedules(
       // Option B refiner. Seed with requestId so the same request reproduces it.
       strategyAnnealing(turmaDisciplinas, timeSlots, profDisp, requestId, weights),
     ];
+
+    // Option C: Google OR-Tools CP-SAT. Optional — if the Python sidecar or the
+    // ortools package is unavailable, skip it instead of failing the request.
+    try {
+      results.push(await strategyOrTools(turmaDisciplinas, timeSlots, profDisp, weights));
+    } catch (err) {
+      console.warn(`[Scheduler] Request ${requestId}: OR-Tools strategy skipped:`, (err as Error).message);
+    }
 
     for (const result of results) {
       const optRes = await pool.query(
