@@ -314,6 +314,27 @@ INSERT INTO turma_disciplina (id, turma_id, disciplina_id, professor_id, aulas_s
     (64, 5, 8,  18, 2, 1);  -- ING  -> Tiago
 
 -- ============================================================
+-- AULAS GEMINADAS (tamanho_bloco = 2)
+-- Materias do nucleo pesado (peso >= 3) sao agendadas em blocos de 2
+-- aulas seguidas. Ex.: Matematica 4 aulas -> [2,2]; 5 aulas -> [2,2,1].
+-- Disciplinas leves (peso <= 2) e de 1 aula permanecem em blocos de 1.
+-- O scheduler usa tamanho_bloco para colocar as aulas de forma contigua.
+-- ============================================================
+UPDATE turma_disciplina td
+SET tamanho_bloco = 2
+FROM disciplina d
+WHERE td.disciplina_id = d.id
+  AND d.peso >= 3
+  AND td.aulas_semana >= 2;
+
+UPDATE curriculo c
+SET tamanho_bloco = 2
+FROM disciplina d
+WHERE c.disciplina_id = d.id
+  AND d.peso >= 3
+  AND c.aulas_semana >= 2;
+
+-- ============================================================
 -- DISPONIBILIDADE DOS PROFESSORES
 -- Default: todos os professores disponiveis em todos os time_slots,
 -- preferencia 3. As variacoes abaixo dao as duas estrategias do

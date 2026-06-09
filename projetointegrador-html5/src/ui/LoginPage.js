@@ -30,30 +30,6 @@ export default function LoginPage({ onSuccess }) {
   return (
     <div className="login-screen">
       <div className="login-shell">
-        <section className="login-hero">
-          <h1>Controle de acesso por perfil.</h1>
-          <p>
-            O administrador organiza a escola, gera grades e cria novos usuários.
-            O usuário comum entra apenas para consultar os horários já confirmados.
-          </p>
-          <div className="login-points">
-            <div className="login-point">
-              <div>1</div>
-              <div>
-                <strong>Administrador</strong>
-                <span>Gerencia cadastros, links de disponibilidade e geração da grade.</span>
-              </div>
-            </div>
-            <div className="login-point">
-              <div>2</div>
-              <div>
-                <strong>Usuário</strong>
-                <span>Visualiza apenas as grades confirmadas, sem edição.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="login-card">
           <h2>Entrar</h2>
           <p>Use o e-mail e a senha do seu perfil para acessar o sistema.</p>

@@ -1,3 +1,4 @@
+import { disciplineColorForItem } from '../utils/disciplineColors';
 import './TimetableGrid.css';
 
 export default function TimetableGrid({ items, turmaNome, editable, selectedItem, onCellClick, onCellDragStart, onCellDrop, onCellDragEnd, professorAvailability, turmaId }) {
@@ -30,7 +31,11 @@ export default function TimetableGrid({ items, turmaNome, editable, selectedItem
             const refItem = items.find(i => i.periodo_numero === pNum);
             return (
               <tr key={pNum}>
-                <td className="periodo-cell">{refItem?.hora_inicio?.slice(0,5)}</td>
+                <td className="periodo-cell">
+                  <span className="periodo-num">{pNum}º</span>
+                  <span className="periodo-inicio">{refItem?.hora_inicio?.slice(0,5)}</span>
+                  {refItem?.hora_fim && <span className="periodo-fim">{refItem.hora_fim.slice(0,5)}</span>}
+                </td>
                 {dias.map(dia => {
                   const cell = grid[`${dia}-${pNum}`];
                   const isFilled = !!cell?.disciplina_sigla;
@@ -45,8 +50,16 @@ export default function TimetableGrid({ items, turmaNome, editable, selectedItem
                     && unavailableSet.has(`${diaId}-${pNum}`)
                     && !isPickedUp);
                   const cursor = !editable ? undefined : isUnavailable && selectedItem ? 'not-allowed' : draggable ? 'grab' : 'pointer';
+                  const color = isFilled ? disciplineColorForItem(cell) : null;
+                  const cellStyle = {};
+                  if (cursor) cellStyle.cursor = cursor;
+                  if (color) {
+                    cellStyle.background = color.bg;
+                    cellStyle.borderLeft = `4px solid ${color.border}`;
+                  }
                   return (
                     <td key={dia}
+                      title={isFilled ? `${cell.disciplina_nome || cell.disciplina_sigla} — ${cell.professor_nome}` : undefined}
                       className={`${isFilled ? 'filled-cell' : 'empty-cell'} ${isPickedUp ? 'picked-up' : ''} ${isDropTarget ? 'drop-target' : ''} ${isSwapTarget ? 'swap-target' : ''} ${isUnavailable ? 'prof-unavailable' : ''}`}
                       draggable={draggable}
                       onDragStart={draggable ? (e) => {
@@ -61,13 +74,14 @@ export default function TimetableGrid({ items, turmaNome, editable, selectedItem
                       } : undefined}
                       onDragEnd={draggable ? () => { onCellDragEnd && onCellDragEnd(); } : undefined}
                       onClick={editable ? () => onCellClick(isFilled ? cell : null, diaId, pNum, turmaId) : undefined}
-                      style={cursor ? { cursor } : undefined}>
+                      style={Object.keys(cellStyle).length ? cellStyle : undefined}>
                       {cell?.disciplina_sigla ? (
                         <>
-                          <span className="disc-sigla">{cell.disciplina_sigla}</span>
+                          <span className="disc-sigla" style={color ? { color: color.text } : undefined}>{cell.disciplina_sigla}</span>
+                          {cell.disciplina_nome && <span className="disc-nome">{cell.disciplina_nome}</span>}
                           <span className="prof-nome">{cell.professor_nome}</span>
                         </>
-                      ) : '-'}
+                      ) : <span className="empty-mark">·</span>}
                     </td>
                   );
                 })}

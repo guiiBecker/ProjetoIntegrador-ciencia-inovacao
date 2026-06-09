@@ -2,9 +2,8 @@
   background: white;
   border: 1px solid var(--color-neutral-200);
   border-radius: var(--radius-lg);
-  margin-bottom: 2rem;
   overflow: hidden;
-  transition: all 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -15,7 +14,6 @@
 
 .option-card.selected {
   border-color: var(--color-success);
-  background: var(--color-success-light);
   box-shadow: var(--shadow-md);
 }
 
@@ -23,9 +21,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 1.75rem;
+  padding: 1.25rem 1.75rem;
   background: var(--color-neutral-50);
   border-bottom: 1px solid var(--color-neutral-200);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.option-header-info {
+  display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -37,16 +42,10 @@
   letter-spacing: -0.3px;
 }
 
-.option-header p {
-  font-size: 0.85rem;
-  color: var(--color-neutral-600);
-  margin: 0.25rem 0 0 0;
-}
-
 .edit-hint {
   font-size: 0.85rem;
   color: var(--color-neutral-600);
-  margin: 0 1.5rem;
+  margin: 1rem 1.5rem 0;
   padding: 0.75rem 1rem;
   background: var(--color-neutral-50);
   border-left: 3px solid var(--color-primary);
@@ -55,41 +54,44 @@
   line-height: 1.5;
 }
 
-.timetables-row {
+.turma-tabs {
   display: flex;
-  gap: 2rem;
-  padding: 1.5rem;
-  align-items: flex-start;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  min-height: auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 0;
+  border-bottom: 1px solid var(--color-neutral-200);
+  background: white;
 }
 
-.timetables-row::-webkit-scrollbar {
-  height: 6px;
-}
-
-.timetables-row::-webkit-scrollbar-track {
+.turma-tab {
+  appearance: none;
+  border: 1px solid transparent;
   background: var(--color-neutral-100);
-  border-radius: 4px;
+  color: var(--color-neutral-700);
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
 }
 
-.timetables-row::-webkit-scrollbar-thumb {
-  background: var(--color-neutral-300);
-  border-radius: 4px;
+.turma-tab:hover {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-900);
 }
 
-.timetables-row::-webkit-scrollbar-thumb:hover {
-  background: var(--color-neutral-400);
+.turma-tab.active {
+  background: white;
+  color: var(--color-primary-dark);
+  border-color: var(--color-neutral-200);
+  border-bottom-color: white;
 }
 
-@media (max-width: 768px) {
-  .timetables-row {
-    gap: 1.5rem;
-    padding: 1.25rem;
-  }
+.timetable-panel {
+  padding: 1.5rem;
+  background: white;
 }
 
 @media (max-width: 600px) {
@@ -99,8 +101,11 @@
     align-items: flex-start;
   }
 
-  .timetables-row {
-    padding: 1rem 1.25rem;
-    gap: 1rem;
+  .turma-tabs {
+    padding: 0.75rem 1rem 0;
+  }
+
+  .timetable-panel {
+    padding: 1rem;
   }
 }

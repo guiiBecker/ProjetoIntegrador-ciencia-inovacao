@@ -416,4 +416,51 @@ export class ConfigService {
   ): Promise<unknown[] | { items: unknown[]; page: number; limit: number; total: number; totalPages: number }> {
     return paginateQuery(this.pool, 'SELECT * FROM dia_semana ORDER BY id', [], pagination);
   }
+
+  // ===================== RESTRICOES SOFT =====================
+
+  // Lista as restricoes soft com seus pesos. peso vem como NUMERIC (string no
+  // driver), entao normalizamos para Number para o frontend trabalhar direto.
+  async listSoftConstraints(): Promise<unknown[]> {
+    const result = await this.pool.query(
+      'SELECT id, codigo, nome, descricao, peso, atualizado_em FROM soft_constraint ORDER BY codigo',
+    );
+    return result.rows.map((r) => ({ ...r, peso: Number(r.peso) }));
+  }
+
+  async updateSoftConstraint(codigo: string, peso: number): Promise<unknown | null> {
+    const result = await this.pool.query(
+      `UPDATE soft_constraint
+       SET peso = $1, atualizado_em = NOW()
+       WHERE codigo = $2
+       RETURNING id, codigo, nome, descricao, peso, atualizado_em`,
+      [peso, codigo],
+    );
+    const row = result.rows[0];
+    return row ? { ...row, peso: Number(row.peso) } : null;
+  }
+
+  // Atualiza varios pesos numa transacao (usado pelo "salvar tudo" da UI).
+  // codigos desconhecidos sao ignorados. Retorna a lista atualizada.
+  async updateSoftConstraints(
+    items: Array<{ codigo: string; peso: number }>,
+  ): Promise<unknown[]> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const it of items) {
+        await client.query(
+          'UPDATE soft_constraint SET peso = $1, atualizado_em = NOW() WHERE codigo = $2',
+          [it.peso, it.codigo],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+    return this.listSoftConstraints();
+  }
 }
