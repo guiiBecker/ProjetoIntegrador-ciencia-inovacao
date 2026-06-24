@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { execFile } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 
 // ===================== Types =====================
 
@@ -1000,12 +1001,26 @@ export function strategyAnnealing(
 // ===================== OR-Tools (CP-SAT) =====================
 
 // Wall-clock budget handed to the Python solver, plus headroom for the spawn so
-// execFile doesn't kill it mid-solve.
-const ORTOOLS_TIME_BUDGET_MS = 5000;
+// execFile doesn't kill it mid-solve. The model carries several soft objectives
+// (SC1/SC5/SC6/SC7 + weekly fill-order); CP-SAT rarely proves optimality but the
+// solution quality (esp. the weekly load taper) keeps improving with time, so the
+// async worker spends ~30s per request to get a clean front-loaded schedule.
+const ORTOOLS_TIME_BUDGET_MS = 30000;
 const ORTOOLS_SPAWN_TIMEOUT_MS = ORTOOLS_TIME_BUDGET_MS + 15000;
 
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 const SOLVER_SCRIPT = path.join(__dirname, '..', 'solver', 'cpsat_solver.py');
+
+// Picks the Python that has ortools installed. Explicit PYTHON_BIN wins; else the
+// project venv (created for local dev, see README) is preferred so the sidecar
+// works without extra setup; else the system python3 (in the Docker image the
+// venv is on PATH, so this resolves to it).
+function resolvePythonBin(): string {
+  if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
+  const venvPython = path.join(__dirname, '..', '.venv', 'bin', 'python');
+  if (fs.existsSync(venvPython)) return venvPython;
+  return 'python3';
+}
+const PYTHON_BIN = resolvePythonBin();
 
 interface SolverOutput {
   assignments: Assignment[];
@@ -1062,7 +1077,13 @@ export async function strategyOrTools(
   weights: SoftWeights = DEFAULT_WEIGHTS,
 ): Promise<ScheduleResult> {
   const profDispMap = buildProfDispMap(profDisps);
-  const { assignments } = await runCpSatSolver(tds, slots, profDisps, weights);
+  const { assignments, status } = await runCpSatSolver(tds, slots, profDisps, weights);
+  // HC4 (place every aula) is a hard constraint in the model, so anything other
+  // than a feasible, non-empty solution means no schedule satisfies the hard
+  // constraints. Surface it as a failure instead of storing an empty grade.
+  if (assignments.length === 0) {
+    throw new Error(`CP-SAT found no feasible schedule (status: ${status})`);
+  }
   return {
     strategy: 'or_tools_cpsat',
     assignments,
@@ -1094,20 +1115,13 @@ export async function generateSchedules(
 
     const weights = await loadSoftWeights(pool);
 
+    // Google OR-Tools CP-SAT is the sole generator. There is no heuristic
+    // fallback: if the Python sidecar/ortools is unavailable or the model is
+    // infeasible (no schedule satisfies the hard constraints), the error
+    // propagates and the request is marked 'failed' by the outer catch.
     const results: ScheduleResult[] = [
-      strategyGreedy(turmaDisciplinas, timeSlots, profDisp, weights),
-      strategyBalanced(turmaDisciplinas, timeSlots, profDisp, weights),
-      // Option B refiner. Seed with requestId so the same request reproduces it.
-      strategyAnnealing(turmaDisciplinas, timeSlots, profDisp, requestId, weights),
+      await strategyOrTools(turmaDisciplinas, timeSlots, profDisp, weights),
     ];
-
-    // Option C: Google OR-Tools CP-SAT. Optional — if the Python sidecar or the
-    // ortools package is unavailable, skip it instead of failing the request.
-    try {
-      results.push(await strategyOrTools(turmaDisciplinas, timeSlots, profDisp, weights));
-    } catch (err) {
-      console.warn(`[Scheduler] Request ${requestId}: OR-Tools strategy skipped:`, (err as Error).message);
-    }
 
     for (const result of results) {
       const optRes = await pool.query(

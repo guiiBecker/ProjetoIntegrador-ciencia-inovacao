@@ -7,6 +7,7 @@ import './OptionCard.css';
 const STRATEGY_LABELS = {
   greedy_best_preference: 'Melhor Preferencia',
   balanced_distribution: 'Distribuicao Equilibrada',
+  or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
 
 export default function OptionCard({ option, onSelect, isSelected, editable, selectedItem, onCellClick, onCellDragStart, onCellDrop, onCellDragEnd, professorAvailability, isConfirmed, activeTurma, onTurmaChange }) {
