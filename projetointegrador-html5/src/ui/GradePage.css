@@ -2,88 +2,72 @@
 
 .grade-page {
   padding: 2rem;
-  max-width: 1600px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
 }
 
-.grade-layout {
+.grade-toolbar {
   display: flex;
-  min-height: 480px;
-  gap: 2.5rem;
-}
-
-.sidebar {
-  width: 280px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
   background: white;
-  border: none;
   border-radius: 12px;
-  padding: 2rem;
-  flex-shrink: 0;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 13px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-@media (max-width: 900px) {
-  .grade-layout {
-    flex-direction: column;
-    min-height: 0;
-    gap: 2rem;
-  }
-  .sidebar {
-    width: 100%;
-    max-height: 280px;
-    overflow-y: auto;
-  }
+/* Keep the generate button inline with the version picker (the shared
+   .btn-generate is full-width by default). */
+.grade-toolbar .btn-generate {
+  width: auto;
+  flex-shrink: 0;
 }
 
-.sidebar h3 {
-  font-size: 0.875rem;
+.request-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.request-picker label {
+  font-size: 0.8rem;
   color: #334155;
   text-transform: uppercase;
-  margin-bottom: 1.25rem;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
 
-.request-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.request-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.875rem;
+.request-select {
+  padding: 0.6rem 0.9rem;
+  border: 2px solid var(--color-neutral-200);
   border-radius: 8px;
-  cursor: pointer;
   font-size: 0.95rem;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  color: #475569;
   font-weight: 500;
+  color: #475569;
+  background: white;
+  cursor: pointer;
+  min-width: 260px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.request-item:hover {
-  background: #f8fafc;
+.request-select:hover,
+.request-select:focus {
   border-color: #3b82f6;
-  color: #1a202c;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
-.request-item.active {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  font-weight: 700;
-  color: #1e40af;
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.15);
-}
-
-.no-items {
-  color: #94a3b8;
-  font-size: 0.9rem;
-  padding: 1rem;
-  text-align: center;
+@media (max-width: 600px) {
+  .request-picker {
+    flex: 1 1 100%;
+  }
+  .request-select {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .content {
@@ -165,27 +149,35 @@
 
 .option-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  border-bottom: 2px solid var(--color-neutral-200);
-  padding-bottom: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .option-tab {
+  flex: 1 1 0;
+  min-width: 0;
   appearance: none;
   background: transparent;
   border: none;
+  border-right: 1px solid var(--color-neutral-200);
   border-bottom: 3px solid transparent;
-  padding: 0.85rem 1.25rem;
+  padding: 0.9rem 1.25rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: 0.2rem;
-  margin-bottom: -2px;
   color: var(--color-neutral-700);
   transition: color 0.15s, border-color 0.15s, background 0.15s;
-  border-radius: 8px 8px 0 0;
+}
+
+.option-tab:last-child {
+  border-right: none;
 }
 
 .option-tab:hover {
@@ -196,6 +188,20 @@
 .option-tab.active {
   color: var(--color-primary-dark);
   border-bottom-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+@media (max-width: 768px) {
+  .option-tabs {
+    flex-wrap: wrap;
+  }
+  .option-tab {
+    flex-basis: 50%;
+    border-bottom: 1px solid var(--color-neutral-200);
+  }
+  .option-tab.active {
+    border-bottom: 3px solid var(--color-primary);
+  }
 }
 
 .option-tab.is-selected .option-tab-label::after {

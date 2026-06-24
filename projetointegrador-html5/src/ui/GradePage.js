@@ -9,7 +9,15 @@ import './GradePage.css';
 const STRATEGY_LABELS = {
   greedy_best_preference: 'Melhor Preferencia',
   balanced_distribution: 'Distribuicao Equilibrada',
+  or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
+
+function formatRequestDate(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('pt-BR');
+}
 
 export default function GradePage() {
   const [requests, setRequests] = useState([]);
@@ -165,25 +173,38 @@ export default function GradePage() {
 
   return (
     <div className="grade-page">
-      <div className="grade-layout">
-        <section className="sidebar">
-          <Button variant="generate" onClick={handleGenerate} disabled={loading || polling}>
-            {loading ? 'Criando...' : polling ? 'Processando...' : 'Gerar Nova Grade'}
-          </Button>
-          <h3>Requisicoes</h3>
-          <ul className="request-list">
+      <div className="grade-toolbar">
+        <Button variant="generate" onClick={handleGenerate} disabled={loading || polling}>
+          {loading ? 'Criando...' : polling ? 'Processando...' : 'Gerar Nova Grade'}
+        </Button>
+        <div className="request-picker">
+          <label htmlFor="request-select">Versao</label>
+          <select
+            id="request-select"
+            className="request-select"
+            value={activeRequest?.id ?? ''}
+            onChange={(e) => {
+              const id = Number(e.target.value);
+              if (!id) return;
+              setSelectedItem(null); setEditError(''); setPolling(false); fetchDetail(id);
+            }}
+          >
+            <option value="" disabled>
+              {requests.length ? 'Selecione uma versao' : 'Nenhuma requisicao ainda'}
+            </option>
             {requests.map(r => (
-              <li key={r.id} className={`request-item ${activeRequest?.id === r.id ? 'active' : ''}`}
-                onClick={() => { setSelectedItem(null); setEditError(''); fetchDetail(r.id); setPolling(false); }}>
-                <span>#{r.id}</span>
-                <Badge variant={r.status}>{statusLabel[r.status] || r.status}</Badge>
-              </li>
+              <option key={r.id} value={r.id}>
+                #{r.id} — {statusLabel[r.status] || r.status}{r.criado_em ? ` — ${formatRequestDate(r.criado_em)}` : ''}
+              </option>
             ))}
-            {requests.length === 0 && <li className="no-items">Nenhuma requisicao ainda</li>}
-          </ul>
-        </section>
+          </select>
+        </div>
+        {activeRequest && (
+          <Badge variant={activeRequest.status}>{statusLabel[activeRequest.status] || activeRequest.status}</Badge>
+        )}
+      </div>
 
-        <section className="content">
+      <section className="content">
           {!activeRequest && <div className="placeholder">Clique em "Gerar Nova Grade" para comecar ou selecione uma requisicao existente.</div>}
           {activeRequest?.status === 'processing' && <div className="placeholder"><Spinner /><p>Gerando opcoes de grade horaria...</p></div>}
           {activeRequest?.status === 'pending' && <div className="placeholder"><p>Aguardando processamento...</p></div>}
@@ -231,7 +252,6 @@ export default function GradePage() {
             </div>
           )}
         </section>
-      </div>
     </div>
   );
 }

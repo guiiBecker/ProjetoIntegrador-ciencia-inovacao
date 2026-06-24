@@ -20,6 +20,11 @@ services:
     volumes:
       - ./projetointegrador-worker:/app
       - worker_node_modules:/app/node_modules
+      # Mascara o .venv do host (binarios do SO do desenvolvedor) para nao
+      # vazar para o container Linux. Sem isto, resolvePythonBin acharia
+      # /app/.venv/bin/python (do host) e falharia; mascarado, cai no python3
+      # do /opt/venv da imagem (que tem ortools).
+      - /app/.venv
 
   frontend:
     command: sh -c "npm install && npm start"
