@@ -213,16 +213,46 @@
   flex-wrap: wrap;
   gap: 0.25rem 0.6rem;
   min-width: 180px;
+  justify-content: center;
 }
 .dia-check {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.2rem;
   font-size: 0.85rem;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  padding: 0.4rem 0.7rem;
+  border: 1.5px solid var(--color-neutral-200);
+  border-radius: 8px;
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-700);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.dia-check input { cursor: pointer; }
+.dia-check:hover {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-900);
+}
+.dia-check-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dia-check-input:checked + label,
+.dia-check:has(.dia-check-input:checked) {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #15803d;
+}
 .periodos-avancado {
   margin-top: 1.5rem;
   border-top: 1px solid #eee;

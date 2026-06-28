@@ -587,8 +587,12 @@ export default function ConfigPage() {
                         <div className="dias-check">
                           {dias.map(d => (
                             <label key={d.id} className="dia-check">
-                              <input type="checkbox" checked={selDias.includes(d.id)}
-                                onChange={() => toggleTurnoDia(t.id, d.id)} />
+                              <input
+                                type="checkbox"
+                                className="dia-check-input"
+                                checked={selDias.includes(d.id)}
+                                onChange={() => toggleTurnoDia(t.id, d.id)}
+                              />
                               {d.nome.slice(0, 3)}
                             </label>
                           ))}
