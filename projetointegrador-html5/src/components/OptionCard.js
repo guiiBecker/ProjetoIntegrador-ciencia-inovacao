@@ -56,7 +56,8 @@ export default function OptionCard({ option, onSelect, isSelected, editable, sel
       {turmaNames.length > 0 && (
         <div className="turma-tabs" role="tablist">
           {turmaNames.map(name => (
-            <button key={name}
+            <button
+              key={name}
               role="tab"
               aria-selected={currentTurma === name}
               className={`turma-tab ${currentTurma === name ? 'active' : ''}`}

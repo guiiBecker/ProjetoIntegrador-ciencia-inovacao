@@ -18,7 +18,6 @@ export default function TimetableGrid({ items, turmaNome, editable, selectedItem
 
   return (
     <div className="timetable-wrapper">
-      <div className="turma-title">{turmaNome}</div>
       <table className="timetable">
         <thead>
           <tr>
