@@ -313,11 +313,12 @@ export class ConfigService {
     serie: string;
     ano_letivo: number;
     turno_id: number;
+    segmento?: string;
   }): Promise<unknown> {
     const result = await this.pool.query(
-      `INSERT INTO turma (nome, serie, ano_letivo, turno_id)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.nome, data.serie, data.ano_letivo, data.turno_id],
+      `INSERT INTO turma (nome, serie, ano_letivo, turno_id, segmento)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [data.nome, data.serie, data.ano_letivo, data.turno_id, data.segmento || 'anos_finais'],
     );
     return result.rows[0];
   }
@@ -329,14 +330,15 @@ export class ConfigService {
       serie: string;
       ano_letivo: number;
       turno_id: number;
+      segmento?: string;
     },
   ): Promise<unknown | null> {
     const result = await this.pool.query(
       `UPDATE turma
-       SET nome = $1, serie = $2, ano_letivo = $3, turno_id = $4
-       WHERE id = $5 AND ativa = TRUE
+       SET nome = $1, serie = $2, ano_letivo = $3, turno_id = $4, segmento = $5
+       WHERE id = $6 AND ativa = TRUE
        RETURNING *`,
-      [data.nome, data.serie, data.ano_letivo, data.turno_id, id],
+      [data.nome, data.serie, data.ano_letivo, data.turno_id, data.segmento || 'anos_finais', id],
     );
     return result.rows[0] ?? null;
   }

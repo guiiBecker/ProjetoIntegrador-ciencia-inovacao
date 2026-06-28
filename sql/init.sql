@@ -9,7 +9,8 @@
 -- =========================
 CREATE TABLE turno (
     id SERIAL PRIMARY KEY,
-    nome VARCHAR(50) NOT NULL UNIQUE
+    nome VARCHAR(50) NOT NULL UNIQUE,
+    para_ensino_medio BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- =========================
@@ -65,9 +66,11 @@ CREATE TABLE turma (
     serie VARCHAR(20) NOT NULL,
     ano_letivo INT NOT NULL,
     turno_id INT NOT NULL REFERENCES turno(id) ON DELETE RESTRICT,
+    segmento VARCHAR(20) NOT NULL DEFAULT 'anos_finais',
     ativa BOOLEAN NOT NULL DEFAULT TRUE,
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-    UNIQUE(nome, ano_letivo)
+    UNIQUE(nome, ano_letivo),
+    CHECK (segmento IN ('anos_finais', 'ensino_medio'))
 );
 
 -- =========================
@@ -204,6 +207,7 @@ CREATE TABLE soft_constraint (
 CREATE INDEX idx_professor_ativo ON professor(ativo);
 CREATE INDEX idx_turma_ano_letivo ON turma(ano_letivo);
 CREATE INDEX idx_turma_turno ON turma(turno_id);
+CREATE INDEX idx_turma_segmento ON turma(segmento);
 CREATE INDEX idx_periodo_turno ON periodo(turno_id);
 CREATE INDEX idx_timeslot_dia_periodo ON time_slot(dia_id, periodo_id);
 CREATE INDEX idx_prof_disp_professor ON professor_disponibilidade(professor_id);
@@ -222,10 +226,10 @@ CREATE INDEX idx_form_link_professor ON professor_form_link(professor_id);
 -- ============================================================
 
 -- Turnos
-INSERT INTO turno (nome) VALUES
-    ('Manha'),
-    ('Tarde'),
-    ('Noite');
+INSERT INTO turno (nome, para_ensino_medio) VALUES
+    ('Manha', FALSE),
+    ('Tarde', TRUE),
+    ('Noite', FALSE);
 
 -- Dias da semana (dias letivos)
 INSERT INTO dia_semana (nome) VALUES

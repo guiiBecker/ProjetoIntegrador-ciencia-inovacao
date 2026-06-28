@@ -13,6 +13,10 @@ export interface TurmaDisciplina {
   aulas_semana: number;
   tamanho_bloco: number;
   turno_id: number;
+  /** Segmento ao qual a turma pertence: 'anos_finais' (só manhã) ou 'ensino_medio' (manhã + tarde de segunda). */
+  segmento: string;
+  /** IDs de turnos cujos time_slots esta turma pode usar. Para anos_finais = [turno_id]; para ensino_medio = [turno_id, ...turnos marcados como para_ensino_medio]. */
+  allowed_turno_ids: number[];
   disciplina_peso: number;
   disciplina_sigla: string | null;
 }
@@ -252,6 +256,19 @@ export function getSlotsByTurnoAndDay(
   return byDay;
 }
 
+/**
+ * Returns candidate slots for a turma grouped by day, covering ALL allowed turnos.
+ * Each turno's slots are kept separate (never merged in the same day entry) to
+ * avoid periodo_numero collisions between manhã and tarde on the same day.
+ * Returns an array of per-turno Maps; callers should flatMap over them.
+ */
+export function getSlotsByAllowedTurnos(
+  slots: TimeSlotInfo[],
+  allowedTurnoIds: number[],
+): Map<number, TimeSlotInfo[]>[] {
+  return allowedTurnoIds.map((tid) => getSlotsByTurnoAndDay(slots, tid));
+}
+
 // Returns true if adding a block of size `blockSize` starting at position
 // `blockStart` in `daySlots` keeps the resource's occupied positions contiguous
 // (no holes between previously used positions and the new block).
@@ -314,13 +331,15 @@ export function findValidBlocks(
 
       // No-gap constraints: positions in the day's aula sequence (existing + new)
       // must be contiguous. Position-based so recreios are not counted as gaps.
-      if (valid && !isContiguous(state.professorUsed.get(td.professor_id), daySlots, i, blockSize)) {
-        valid = false;
-      }
-      if (valid && !isContiguous(state.turmaUsed.get(td.turma_id), daySlots, i, blockSize)) {
-        valid = false;
-      }
-
+      // No-gap (turma/professor) is NOT enforced here for heuristic strategies.
+      // Reason: with demand == capacity (25/25 EF, 30/30 EM) the no-gap invariant
+      // is trivially satisfied once ALL slots are filled. Enforcing it during
+      // intermediate construction states is over-constraining: it rejects valid
+      // placements because earlier slots of the same day aren't yet occupied, even
+      // though they will be by the time construction finishes.
+      // HC-no-gap remains a hard constraint in the CP-SAT solver (cpsat_solver.py),
+      // which can reason globally across all assignments at once.
+      // SC5 (professor idle window) penalises gaps in the final score (softPenalty).
       if (valid) {
         results.push({
           slots: blockSlots,
@@ -549,7 +568,7 @@ export function composeScore(
 async function loadData(pool: Pool) {
   const tdResult = await pool.query(`
     SELECT td.id, td.turma_id, td.disciplina_id, td.professor_id,
-           td.aulas_semana, td.tamanho_bloco, t.turno_id,
+           td.aulas_semana, td.tamanho_bloco, t.turno_id, t.segmento,
            d.peso AS disciplina_peso, d.sigla AS disciplina_sigla
     FROM turma_disciplina td
     JOIN turma t ON td.turma_id = t.id
@@ -569,8 +588,24 @@ async function loadData(pool: Pool) {
     FROM professor_disponibilidade
   `);
 
+  // Turnos marcados como extra para Ensino Médio (e.g. "Tarde" com para_ensino_medio = TRUE).
+  const emTurnoResult = await pool.query(`
+    SELECT id FROM turno WHERE para_ensino_medio = TRUE
+  `);
+  const emTurnoIds: number[] = emTurnoResult.rows.map((r: { id: number }) => r.id);
+
+  // Enriquecer cada TurmaDisciplina com allowed_turno_ids.
+  const turmaDisciplinas: TurmaDisciplina[] = tdResult.rows.map((row) => ({
+    ...row,
+    segmento: row.segmento ?? 'anos_finais',
+    allowed_turno_ids:
+      row.segmento === 'ensino_medio'
+        ? [...new Set([row.turno_id, ...emTurnoIds])]
+        : [row.turno_id],
+  }));
+
   return {
-    turmaDisciplinas: tdResult.rows as TurmaDisciplina[],
+    turmaDisciplinas,
     timeSlots: tsResult.rows as TimeSlotInfo[],
     profDisp: pdResult.rows as ProfDisp[],
   };
@@ -655,30 +690,81 @@ function buildGreedy(
 ): PlacedBlock[] {
   const state = newState();
 
+  // Pre-compute total aulas per professor across all TDs so that TDs taught by
+  // highly-loaded professors (where professor aulas ≈ total available slots) are
+  // scheduled first. This prevents Luane-style infeasibility where a professor
+  // with 30 aulas / 30 slots gets processed last and finds no free slots left.
+  const profTotalAulas = new Map<number, number>();
+  for (const td of tds) {
+    profTotalAulas.set(td.professor_id, (profTotalAulas.get(td.professor_id) ?? 0) + td.aulas_semana);
+  }
+
   const scored = tds.map((td) => {
-    const slotsByDay = getSlotsByTurnoAndDay(slots, td.turno_id);
-    const candidates = findValidBlocks(td, td.tamanho_bloco, slotsByDay, profDispMap, state);
+    const candidates = td.allowed_turno_ids.flatMap((turnoId) =>
+      findValidBlocks(td, td.tamanho_bloco, getSlotsByTurnoAndDay(slots, turnoId), profDispMap, state),
+    );
     const blocksNeeded = planBlocks(td.aulas_semana, td.tamanho_bloco).length;
     const ratio = blocksNeeded > 0 ? candidates.length / blocksNeeded : Infinity;
-    return { td, ratio };
+    return { td, ratio, profLoad: profTotalAulas.get(td.professor_id) ?? 0 };
   });
-  scored.sort((a, b) => a.ratio - b.ratio);
+  // Primary sort: most-constrained TD first (fewest candidates per block needed).
+  // Secondary sort: higher professor total load goes first (critical for professors
+  // with aulas == total slots, e.g. Luane at 30/30 who must claim every slot).
+  scored.sort((a, b) => {
+    if (a.ratio !== b.ratio) return a.ratio - b.ratio;
+    return b.profLoad - a.profLoad;
+  });
 
   const placed: PlacedBlock[] = [];
 
   for (const { td } of scored) {
-    const slotsByDay = getSlotsByTurnoAndDay(slots, td.turno_id);
     const plannedBlocks = planBlocks(td.aulas_semana, td.tamanho_bloco);
 
     for (const blockSize of plannedBlocks) {
-      const candidates = findValidBlocks(td, blockSize, slotsByDay, profDispMap, state);
-      if (candidates.length === 0) break;
+      const candidates = td.allowed_turno_ids.flatMap((turnoId) =>
+        findValidBlocks(td, blockSize, getSlotsByTurnoAndDay(slots, turnoId), profDispMap, state),
+      );
+      // continue (not break) so remaining blocks of this TD are retried later in
+      // the repair pass, and to allow smaller trailing blocks to be placed even
+      // when a larger block fails.
+      if (candidates.length === 0) continue;
       const ranked: ScoredCandidate[] = candidates
         .map((cand) => ({ cand, score: greedyCandidateScore(cand, weights) }))
         .sort((a, b) => b.score - a.score);
       const chosen = pick(ranked, rng);
       markSlots(state, td, chosen.diaId, chosen.slots);
       placed.push({ td, slots: chosen.slots });
+    }
+  }
+
+  // Repair pass: retry TDs that weren't fully placed.  After the primary greedy
+  // sweep some blocks may have been skipped (no valid candidate at that moment
+  // because another TD had claimed the slot first).  Now that the grid is more
+  // populated a second pass often finds room because the professor-conflict picture
+  // has stabilised and the contiguous-candidate windows are clearer.
+  const placedCount = new Map<number, number>();
+  for (const b of placed) placedCount.set(b.td.id, (placedCount.get(b.td.id) ?? 0) + 1);
+
+  for (const { td } of scored) {
+    const plannedBlocks = planBlocks(td.aulas_semana, td.tamanho_bloco);
+    let alreadyPlaced = placedCount.get(td.id) ?? 0;
+    if (alreadyPlaced >= plannedBlocks.length) continue;
+
+    // Start from alreadyPlaced so we use the correct block size for each
+    // remaining slot (not restart from block index 0 which could over-place).
+    for (let k = alreadyPlaced; k < plannedBlocks.length; k++) {
+      const blockSize = plannedBlocks[k];
+      const candidates = td.allowed_turno_ids.flatMap((turnoId) =>
+        findValidBlocks(td, blockSize, getSlotsByTurnoAndDay(slots, turnoId), profDispMap, state),
+      );
+      if (candidates.length === 0) continue;
+      const ranked: ScoredCandidate[] = candidates
+        .map((cand) => ({ cand, score: greedyCandidateScore(cand, weights) }))
+        .sort((a, b) => b.score - a.score);
+      const chosen = pick(ranked, rng);
+      markSlots(state, td, chosen.diaId, chosen.slots);
+      placed.push({ td, slots: chosen.slots });
+      alreadyPlaced++;
     }
   }
 
@@ -716,35 +802,71 @@ export function strategyBalanced(
   const state = newState();
   const dayLoad = new Map<number, Map<number, number>>();
 
-  const sorted = [...tds].sort((a, b) => b.aulas_semana - a.aulas_semana);
+  // Like buildGreedy, sort highly-loaded professors first so they can claim slots
+  // before other TDs consume them. Primary: aulas_semana descending; secondary:
+  // professor total load descending (critical professors first).
+  const profTotalAulasB = new Map<number, number>();
+  for (const td of tds) {
+    profTotalAulasB.set(td.professor_id, (profTotalAulasB.get(td.professor_id) ?? 0) + td.aulas_semana);
+  }
+  const sorted = [...tds].sort((a, b) => {
+    if (a.aulas_semana !== b.aulas_semana) return b.aulas_semana - a.aulas_semana;
+    const loadA = profTotalAulasB.get(a.professor_id) ?? 0;
+    const loadB = profTotalAulasB.get(b.professor_id) ?? 0;
+    return loadB - loadA;
+  });
   const allAssignments: Assignment[] = [];
 
-  for (const td of sorted) {
+  const placeBlock = (td: TurmaDisciplina, blockSize: number): boolean => {
     if (!dayLoad.has(td.turma_id)) dayLoad.set(td.turma_id, new Map());
     const turmaLoad = dayLoad.get(td.turma_id)!;
-    const slotsByDay = getSlotsByTurnoAndDay(slots, td.turno_id);
-    const plannedBlocks = planBlocks(td.aulas_semana, td.tamanho_bloco);
+    const candidates = td.allowed_turno_ids.flatMap((turnoId) =>
+      findValidBlocks(td, blockSize, getSlotsByTurnoAndDay(slots, turnoId), profDispMap, state),
+    );
+    if (candidates.length === 0) return false;
+    candidates.sort((a, b) => {
+      const loadA = turmaLoad.get(a.diaId) || 0;
+      const loadB = turmaLoad.get(b.diaId) || 0;
+      if (loadA !== loadB) return loadA - loadB;
+      const penA = weights.dayCluster * a.dayClusterCount * a.dayClusterCount
+        + weights.periodCluster * a.periodPenalty;
+      const penB = weights.dayCluster * b.dayClusterCount * b.dayClusterCount
+        + weights.periodCluster * b.periodPenalty;
+      if (penA !== penB) return penA - penB;
+      return b.avgPref - a.avgPref;
+    });
+    const chosen = candidates[0];
+    markSlots(state, td, chosen.diaId, chosen.slots);
+    turmaLoad.set(chosen.diaId, (turmaLoad.get(chosen.diaId) || 0) + blockSize);
+    for (const s of chosen.slots) {
+      allAssignments.push({ turma_disciplina_id: td.id, time_slot_id: s.id });
+    }
+    return true;
+  };
 
+  const balPlacedCount = new Map<number, number>();
+  for (const td of sorted) {
+    const plannedBlocks = planBlocks(td.aulas_semana, td.tamanho_bloco);
+    let placed = 0;
     for (const blockSize of plannedBlocks) {
-      const candidates = findValidBlocks(td, blockSize, slotsByDay, profDispMap, state);
-      if (candidates.length === 0) break;
-      candidates.sort((a, b) => {
-        const loadA = turmaLoad.get(a.diaId) || 0;
-        const loadB = turmaLoad.get(b.diaId) || 0;
-        if (loadA !== loadB) return loadA - loadB;
-        const penA = weights.dayCluster * a.dayClusterCount * a.dayClusterCount
-          + weights.periodCluster * a.periodPenalty;
-        const penB = weights.dayCluster * b.dayClusterCount * b.dayClusterCount
-          + weights.periodCluster * b.periodPenalty;
-        if (penA !== penB) return penA - penB;
-        return b.avgPref - a.avgPref;
-      });
-      const chosen = candidates[0];
-      markSlots(state, td, chosen.diaId, chosen.slots);
-      turmaLoad.set(chosen.diaId, (turmaLoad.get(chosen.diaId) || 0) + blockSize);
-      for (const s of chosen.slots) {
-        allAssignments.push({ turma_disciplina_id: td.id, time_slot_id: s.id });
+      if (placeBlock(td, blockSize)) {
+        placed++;
+        balPlacedCount.set(td.id, placed);
       }
+      // continue (not break) — try remaining blocks even if one fails
+    }
+  }
+
+  // Repair pass: retry any TD that wasn't fully placed.
+  for (const td of sorted) {
+    const plannedBlocks = planBlocks(td.aulas_semana, td.tamanho_bloco);
+    let placed = balPlacedCount.get(td.id) ?? 0;
+    if (placed >= plannedBlocks.length) continue;
+    for (let k = 0; k < plannedBlocks.length - placed; k++) {
+      // Try each remaining block size; planBlocks is already [block, block, ..., remainder]
+      // so attempt the first missing block size repeatedly.
+      const blockSize = plannedBlocks[placed + k] ?? plannedBlocks[plannedBlocks.length - 1];
+      if (placeBlock(td, blockSize)) placed++;
     }
   }
 
@@ -822,8 +944,10 @@ export function strategyAnnealing(
   const EMPTY_IGNORE: Set<number> = new Set();
 
   // Per-turno day layouts (sorted aula slots) used to find relocation targets.
+  // Built for ALL distinct turno_ids present in the loaded slots so that
+  // ensino_medio turmas (which span manhã + tarde) get layouts for both turnos.
   const turnoLayouts = new Map<number, Map<number, TimeSlotInfo[]>>();
-  for (const turnoId of new Set(tds.map((t) => t.turno_id))) {
+  for (const turnoId of new Set(slots.map((s) => s.turno_id))) {
     turnoLayouts.set(turnoId, getSlotsByTurnoAndDay(slots, turnoId));
   }
 
@@ -845,29 +969,33 @@ export function strategyAnnealing(
     return true;
   };
 
-  // Free contiguous runs of `len` aula slots for a turma+professor on its turno,
-  // ignoring slots in `ignore` (e.g. the slots a block currently occupies).
+  // Free contiguous runs of `len` aula slots for a turma+professor across all its
+  // allowed turnos, ignoring slots in `ignore` (e.g. the slots a block currently
+  // occupies). Each turno is searched separately so manhã and tarde periods are
+  // never merged — this prevents contiguity false-positives across the lunch gap.
   const findFreeRuns = (
-    turnoId: number, turmaId: number, profId: number, len: number, ignore: Set<number>,
+    turnoIds: number[], turmaId: number, profId: number, len: number, ignore: Set<number>,
   ): TimeSlotInfo[][] => {
-    const layout = turnoLayouts.get(turnoId);
-    if (!layout) return [];
     const runs: TimeSlotInfo[][] = [];
-    for (const daySlots of layout.values()) {
-      for (let i = 0; i + len <= daySlots.length; i++) {
-        let contiguous = true;
-        for (let j = 1; j < len; j++) {
-          if (daySlots[i + j].periodo_numero !== daySlots[i].periodo_numero + j) { contiguous = false; break; }
+    for (const turnoId of turnoIds) {
+      const layout = turnoLayouts.get(turnoId);
+      if (!layout) continue;
+      for (const daySlots of layout.values()) {
+        for (let i = 0; i + len <= daySlots.length; i++) {
+          let contiguous = true;
+          for (let j = 1; j < len; j++) {
+            if (daySlots[i + j].periodo_numero !== daySlots[i].periodo_numero + j) { contiguous = false; break; }
+          }
+          if (!contiguous) continue;
+          const run = daySlots.slice(i, i + len);
+          let ok = true;
+          for (const s of run) {
+            if (turmaBusy(turmaId, s.id, ignore)
+              || !profAvailable(profId, s.id)
+              || profBusy(profId, s.id, ignore)) { ok = false; break; }
+          }
+          if (ok) runs.push(run);
         }
-        if (!contiguous) continue;
-        const run = daySlots.slice(i, i + len);
-        let ok = true;
-        for (const s of run) {
-          if (turmaBusy(turmaId, s.id, ignore)
-            || !profAvailable(profId, s.id)
-            || profBusy(profId, s.id, ignore)) { ok = false; break; }
-        }
-        if (ok) runs.push(run);
       }
     }
     return runs;
@@ -876,7 +1004,7 @@ export function strategyAnnealing(
   // Relocation targets for an already-placed block (excludes its current spot).
   const relocationTargets = (block: PlacedBlock): TimeSlotInfo[][] => {
     const ignore = new Set(block.slots.map((s) => s.id));
-    return findFreeRuns(block.td.turno_id, block.td.turma_id, block.td.professor_id, block.slots.length, ignore)
+    return findFreeRuns(block.td.allowed_turno_ids, block.td.turma_id, block.td.professor_id, block.slots.length, ignore)
       .filter((run) => !run.every((s, k) => s.id === block.slots[k]?.id));
   };
 
@@ -942,7 +1070,7 @@ export function strategyAnnealing(
     // Prefer placing a pending block while any remain (drives placement up).
     if (pending.length > 0 && rng() < SA_INSERT_PROBABILITY) {
       const p = pending[Math.floor(rng() * pending.length)];
-      const targets = findFreeRuns(p.td.turno_id, p.td.turma_id, p.td.professor_id, p.size, EMPTY_IGNORE);
+      const targets = findFreeRuns(p.td.allowed_turno_ids, p.td.turma_id, p.td.professor_id, p.size, EMPTY_IGNORE);
       if (targets.length > 0) {
         move = { kind: 'insert', pending: p, to: targets[Math.floor(rng() * targets.length)] };
       }
@@ -1115,13 +1243,28 @@ export async function generateSchedules(
 
     const weights = await loadSoftWeights(pool);
 
-    // Google OR-Tools CP-SAT is the sole generator. There is no heuristic
-    // fallback: if the Python sidecar/ortools is unavailable or the model is
-    // infeasible (no schedule satisfies the hard constraints), the error
-    // propagates and the request is marked 'failed' by the outer catch.
-    const results: ScheduleResult[] = [
-      await strategyOrTools(turmaDisciplinas, timeSlots, profDisp, weights),
-    ];
+    // Gera três opções em paralelo: CP-SAT (exato) + duas heurísticas rápidas.
+    // Cada estratégia produz uma schedule_option independente que o usuário pode
+    // comparar e escolher. Se uma falhar (e.g. CP-SAT sem sidecar Python), as
+    // outras ainda são salvas. O request só vai para 'failed' se TODAS falharem.
+    const settled = await Promise.allSettled([
+      strategyOrTools(turmaDisciplinas, timeSlots, profDisp, weights),
+      Promise.resolve(strategyGreedy(turmaDisciplinas, timeSlots, profDisp, weights)),
+      Promise.resolve(strategyBalanced(turmaDisciplinas, timeSlots, profDisp, weights)),
+    ]);
+
+    const results: ScheduleResult[] = [];
+    for (const s of settled) {
+      if (s.status === 'fulfilled') {
+        results.push(s.value);
+      } else {
+        console.warn(`[Scheduler] Uma estratégia falhou: ${(s.reason as Error).message}`);
+      }
+    }
+
+    if (results.length === 0) {
+      throw new Error('Todas as estratégias falharam — nenhuma grade gerada.');
+    }
 
     for (const result of results) {
       const optRes = await pool.query(

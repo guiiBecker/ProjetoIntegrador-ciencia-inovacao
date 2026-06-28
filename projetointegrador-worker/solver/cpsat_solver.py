@@ -78,33 +78,42 @@ def turno_edges(grouped):
 
 def candidate_runs(td, size, grouped, disp_map):
     """Every contiguous run of `size` aula slots on a single day for this td's
-    turno where the professor is available on all of them. Returns a list of
-    (slot_ids, total_preference, dia_id, numeros) where numeros is the tuple of
-    periodo numbers covered (used to detect the day's first/last edges)."""
+    allowed turnos where the professor is available on all of them.
+
+    Each turno is searched independently so manhã and tarde periods are never
+    merged, preventing false-contiguous runs across the lunch break.
+
+    Returns a list of (slot_ids, total_preference, dia_id, numeros, run_turno_id)
+    where numeros is the tuple of periodo numbers covered (used to detect the
+    day's first/last edges for SC6/SC7) and run_turno_id is the turno the run
+    belongs to (used for correct pos_of / edges lookups).
+    """
     runs = []
     prof = td["professor_id"]
-    for day_slots in grouped.get(td["turno_id"], {}).values():
-        for i in range(len(day_slots) - size + 1):
-            run = day_slots[i:i + size]
-            # Contiguous in clock terms: consecutive periodo numbers.
-            if any(run[j]["periodo_numero"] != run[0]["periodo_numero"] + j
-                   for j in range(size)):
-                continue
-            total_pref = 0
-            ok = True
-            for s in run:
-                d = disp_map.get((prof, s["id"]))
-                if d is None or not d["disponivel"]:
-                    ok = False
-                    break
-                total_pref += d["preferencia"]
-            if ok:
-                runs.append((
-                    [s["id"] for s in run],
-                    total_pref,
-                    run[0]["dia_id"],
-                    tuple(s["periodo_numero"] for s in run),
-                ))
+    for turno_id in td.get("allowed_turno_ids", [td["turno_id"]]):
+        for day_slots in grouped.get(turno_id, {}).values():
+            for i in range(len(day_slots) - size + 1):
+                run = day_slots[i:i + size]
+                # Contiguous in clock terms: consecutive periodo numbers.
+                if any(run[j]["periodo_numero"] != run[0]["periodo_numero"] + j
+                       for j in range(size)):
+                    continue
+                total_pref = 0
+                ok = True
+                for s in run:
+                    d = disp_map.get((prof, s["id"]))
+                    if d is None or not d["disponivel"]:
+                        ok = False
+                        break
+                    total_pref += d["preferencia"]
+                if ok:
+                    runs.append((
+                        [s["id"] for s in run],
+                        total_pref,
+                        run[0]["dia_id"],
+                        tuple(s["periodo_numero"] for s in run),
+                        turno_id,
+                    ))
     return runs
 
 
@@ -144,7 +153,9 @@ def solve(problem):
     prof_slot_vars = defaultdict(list)
     # For spread: (turma_id, disciplina_id, dia_id) -> [vars].
     disc_day_vars = defaultdict(list)
-    # turma_id -> turno_id (a turma's tds all share its turno); used for no-gap.
+    # turma_id -> set of turno_ids the turma can use; used for no-gap constraint.
+    # Anos Finais turmas have one turno (manhã); Ensino Médio turmas may have
+    # multiple (manhã + tarde). No-gap is enforced independently per turno.
     turma_turno = {}
 
     preference_terms = []     # (var, total preference) -> maximize
@@ -153,16 +164,18 @@ def solve(problem):
     fill_terms = []           # (var, day_rank_sum, pos_sum) -> minimize (fill order)
 
     for td in tds:
-        turma_turno[td["turma_id"]] = td["turno_id"]
+        # Track all allowed turnos per turma for the no-gap constraint.
+        allowed_ids = td.get("allowed_turno_ids", [td["turno_id"]])
+        for tid in allowed_ids:
+            turma_turno.setdefault(td["turma_id"], set()).add(tid)
         is_heavy = td.get("disciplina_peso", 1) >= HEAVY_PESO_THRESHOLD
         sigla = td.get("disciplina_sigla") or ""
         is_practical = bool(PRACTICAL_SIGLA_RE.match(sigla))
-        first_n, last_n = edges.get(td["turno_id"], (None, None))
         sizes = plan_blocks(td["aulas_semana"], td["tamanho_bloco"])
         for b_idx, size in enumerate(sizes):
             runs = candidate_runs(td, size, grouped, disp_map)
             block_vars = []
-            for r_idx, (slot_ids, total_pref, dia_id, numeros) in enumerate(runs):
+            for r_idx, (slot_ids, total_pref, dia_id, numeros, run_turno_id) in enumerate(runs):
                 var = model.NewBoolVar(f"x_{td['id']}_{b_idx}_{r_idx}")
                 x[(td["id"], b_idx, r_idx)] = var
                 block_vars.append(var)
@@ -171,11 +184,14 @@ def solve(problem):
                     turma_slot_vars[(td["turma_id"], sid)].append(var)
                     prof_slot_vars[(td["professor_id"], sid)].append(var)
                 disc_day_vars[(td["turma_id"], td["disciplina_id"], dia_id)].append(var)
-                if is_heavy and last_n in numeros:
+                # SC6/SC7: use the run's own turno edges so manhã and tarde are judged independently.
+                run_first_n, run_last_n = edges.get(run_turno_id, (None, None))
+                if is_heavy and run_last_n in numeros:
                     heavy_last_terms.append(var)
-                if is_practical and first_n in numeros:
+                if is_practical and run_first_n in numeros:
                     practical_first_terms.append(var)
-                pos_sum = sum(pos_of[(td["turno_id"], sid)] for sid in slot_ids)
+                # Fill-order: pos_of keyed by the run's actual turno_id.
+                pos_sum = sum(pos_of[(run_turno_id, sid)] for sid in slot_ids)
                 fill_terms.append((var, size * day_rank[dia_id], pos_sum))
             # HC4: every block must be placed exactly once. A block with no
             # candidate run cannot be placed at all -> the problem is infeasible.
@@ -192,23 +208,26 @@ def solve(problem):
             model.Add(sum(vars_) <= 1)
 
     # HC no-gap (turma): a turma's occupied aula positions on a day must be
-    # contiguous. Position-based over the turno's sorted slots, so recreios (no
-    # time_slot) don't count as gaps. For any positions a < b < c on a day, if a
-    # and c are both occupied then the middle b must be too. occ[p] is the (0/1)
-    # occupancy of position p, i.e. the sum of vars covering that slot for the
-    # turma (HC2 keeps it <= 1).
-    for turma_id, turno_id in turma_turno.items():
-        for day_slots in grouped.get(turno_id, {}).values():
-            occ = [turma_slot_vars.get((turma_id, s["id"]), []) for s in day_slots]
-            n = len(occ)
-            for a in range(n):
-                if not occ[a]:
-                    continue
-                for c in range(a + 2, n):
-                    if not occ[c]:
+    # contiguous within each turno. Position-based over the turno's sorted slots,
+    # so recreios (no time_slot) don't count as gaps. Manhã and tarde are enforced
+    # independently (no constraint crosses the lunch break between the two turnos).
+    # For any positions a < b < c on a day within one turno, if a and c are both
+    # occupied then the middle b must be too. occ[p] is the (0/1) occupancy of
+    # position p, i.e. the sum of vars covering that slot for the turma
+    # (HC2 keeps it <= 1).
+    for turma_id, turno_ids in turma_turno.items():
+        for turno_id in turno_ids:
+            for day_slots in grouped.get(turno_id, {}).values():
+                occ = [turma_slot_vars.get((turma_id, s["id"]), []) for s in day_slots]
+                n = len(occ)
+                for a in range(n):
+                    if not occ[a]:
                         continue
-                    for b in range(a + 1, c):
-                        model.Add(sum(occ[b]) >= sum(occ[a]) + sum(occ[c]) - 1)
+                    for c in range(a + 2, n):
+                        if not occ[c]:
+                            continue
+                        for b in range(a + 1, c):
+                            model.Add(sum(occ[b]) >= sum(occ[a]) + sum(occ[c]) - 1)
 
     # Soft spread (SC1): penalize each block of a discipline beyond the first on a day.
     spread_excess = []
@@ -288,7 +307,7 @@ def solve(problem):
             sizes = plan_blocks(td["aulas_semana"], td["tamanho_bloco"])
             for b_idx, size in enumerate(sizes):
                 runs = candidate_runs(td, size, grouped, disp_map)
-                for r_idx, (slot_ids, _pref, _dia, _nums) in enumerate(runs):
+                for r_idx, (slot_ids, _pref, _dia, _nums, _turno) in enumerate(runs):
                     var = x.get((td["id"], b_idx, r_idx))
                     if var is not None and solver.Value(var) == 1:
                         for sid in slot_ids:

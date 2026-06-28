@@ -211,7 +211,7 @@ export class ConfigController {
 
   @Post('turmas')
   async createTurma(
-    @Body() body: { nome: string; serie: string; ano_letivo: number; turno_id: number },
+    @Body() body: { nome: string; serie: string; ano_letivo: number; turno_id: number; segmento?: string },
   ): Promise<unknown> {
     if (!body.nome || !body.serie || !body.ano_letivo || !body.turno_id) {
       throw new HttpException('Campos obrigatorios: nome, serie, ano_letivo, turno_id', HttpStatus.BAD_REQUEST);
@@ -222,7 +222,7 @@ export class ConfigController {
   @Put('turmas/:id')
   async updateTurma(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { nome: string; serie: string; ano_letivo: number; turno_id: number },
+    @Body() body: { nome: string; serie: string; ano_letivo: number; turno_id: number; segmento?: string },
   ): Promise<unknown> {
     if (!body.nome || !body.serie || !body.ano_letivo || !body.turno_id) {
       throw new HttpException('Campos obrigatorios: nome, serie, ano_letivo, turno_id', HttpStatus.BAD_REQUEST);

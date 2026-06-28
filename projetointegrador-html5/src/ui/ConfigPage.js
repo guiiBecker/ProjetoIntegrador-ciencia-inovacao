@@ -45,7 +45,7 @@ export default function ConfigPage() {
   const [turnoForms, setTurnoForms] = useState({}); // por turno_id: regras de geracao
   const [profForm, setProfForm] = useState({ nome: '', email: '', carga_horaria_max: 40 });
   const [discForm, setDiscForm] = useState({ nome: '', sigla: '', peso: 1 });
-  const [turmaForm, setTurmaForm] = useState({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '' });
+  const [turmaForm, setTurmaForm] = useState({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '', segmento: 'anos_finais' });
   const [tdForm, setTdForm] = useState({ turma_id: '', disciplina_id: '', professor_id: '', aulas_semana: '', tamanho_bloco: 1 });
 
   const loadReferenceData = useCallback(async () => {
@@ -152,7 +152,7 @@ export default function ConfigPage() {
   };
 
   const resetTurmaForm = () => {
-    setTurmaForm({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '' });
+    setTurmaForm({ nome: '', serie: '', ano_letivo: new Date().getFullYear(), turno_id: '', segmento: 'anos_finais' });
     setEditingTurmaId(null);
   };
 
@@ -382,6 +382,7 @@ export default function ConfigPage() {
       serie: turma.serie || '',
       ano_letivo: turma.ano_letivo ?? new Date().getFullYear(),
       turno_id: turma.turno_id ?? '',
+      segmento: turma.segmento || 'anos_finais',
     });
     setEditingTurmaId(turma.id);
     setActiveTab('turmas');
@@ -715,17 +716,23 @@ export default function ConfigPage() {
                 <option value="">Selecione...</option>
                 {turnos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
               </select>
+              <label>Segmento</label>
+              <select value={turmaForm.segmento} onChange={e => setTurmaForm({...turmaForm, segmento: e.target.value})} required>
+                <option value="anos_finais">Anos Finais (6º–9º ano) — manhã Seg–Sex</option>
+                <option value="ensino_medio">Ensino Médio (1º–3º ano) — manhã Seg–Sex + tarde segunda</option>
+              </select>
               <Button type="submit">Adicionar</Button>
             </form>
           </div>
           <div className="data-table-wrapper">
-            <DataTable headers={['Nome', 'Série', 'Ano', 'Turno', '']} rows={turmas} emptyText="Nenhuma turma cadastrada">
+            <DataTable headers={['Nome', 'Série', 'Ano', 'Turno', 'Segmento', '']} rows={turmas} emptyText="Nenhuma turma cadastrada">
             {turmas.map(t => (
               <tr key={t.id}>
                 <td>{t.nome}</td>
                 <td>{t.serie}</td>
                 <td>{t.ano_letivo}</td>
                 <td>{t.turno_nome}</td>
+                <td>{t.segmento === 'ensino_medio' ? 'Ensino Médio' : 'Anos Finais'}</td>
                 <td style={{ display: 'flex', gap: '0.5rem' }}>
                   <Button type="button" variant="info" onClick={() => handleEditTurma(t)}>Editar</Button>
                   <Button type="button" variant="danger" onClick={() => handleDeleteTurma(t.id)}>Deletar</Button>
