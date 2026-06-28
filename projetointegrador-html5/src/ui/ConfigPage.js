@@ -12,12 +12,12 @@ import './ConfigPage.css';
 const DEFAULT_PAGE_LIMIT = 20;
 
 const TABS = [
-  { key: 'periodos', label: 'Periodos' },
+  { key: 'periodos', label: 'Períodos' },
   { key: 'professores', label: 'Professores' },
   { key: 'disciplinas', label: 'Disciplinas' },
   { key: 'turmas', label: 'Turmas' },
-  { key: 'atribuicoes', label: 'Atribuicoes' },
-  { key: 'restricoes', label: 'Restricoes' },
+  { key: 'atribuicoes', label: 'Atribuições' },
+  { key: 'restricoes', label: 'Restrições' },
 ];
 
 export default function ConfigPage() {
@@ -219,14 +219,14 @@ export default function ConfigPage() {
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
       resetPeriodoForm();
-      showMsg(isEditing ? 'Periodo atualizado!' : 'Periodo adicionado!');
+      showMsg(isEditing ? 'Período atualizado!' : 'Período adicionado!');
       refreshAllData();
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handleGerarTurno = async (turnoId) => {
     const f = turnoForms[turnoId];
-    if (!f || !f.hora_inicio) { showMsg('Informe a hora do 1o periodo.'); return; }
+    if (!f || !f.hora_inicio) { showMsg('Informe a hora do 1º período.'); return; }
     if (!f.dia_ids || f.dia_ids.length === 0) { showMsg('Selecione ao menos um dia.'); return; }
     try {
       const res = await apiFetch('/api/config/periodos/gerar', {
@@ -243,9 +243,9 @@ export default function ConfigPage() {
       });
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
       const d = await res.json();
-      showMsg(`Gerados ${d.periodos} periodos e ${d.slots} time slots.`);
+      showMsg(`Gerados ${d.periodos} períodos e ${d.slots} time slots.`);
       refreshAllData();
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handleEditPeriodo = (periodo) => {
@@ -294,7 +294,7 @@ export default function ConfigPage() {
       resetProfessorForm();
       showMsg(isEditing ? 'Professor atualizado!' : 'Professor adicionado!');
       refreshAllData();
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handleEditProfessor = (professor) => {
@@ -333,7 +333,7 @@ export default function ConfigPage() {
       resetDisciplinaForm();
       showMsg(isEditing ? 'Disciplina atualizada!' : 'Disciplina adicionada!');
       refreshAllData();
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handleEditDisciplina = (disciplina) => {
@@ -373,7 +373,7 @@ export default function ConfigPage() {
       resetTurmaForm();
       showMsg(isEditing ? 'Turma atualizada!' : 'Turma adicionada!');
       refreshAllData();
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handleEditTurma = (turma) => {
@@ -416,7 +416,7 @@ export default function ConfigPage() {
       resetTdForm();
       showMsg(isEditing ? 'Atribuição atualizada!' : 'Atribuição adicionada!');
       refreshAllData();
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handleEditTD = (td) => {
@@ -451,7 +451,7 @@ export default function ConfigPage() {
   const handleSaveSoftConstraints = async () => {
     const items = softConstraints.map((sc) => ({ codigo: sc.codigo, peso: Number(sc.peso) }));
     if (items.some((it) => !Number.isFinite(it.peso) || it.peso < 0)) {
-      showMsg('Pesos devem ser numeros maiores ou iguais a zero.');
+      showMsg('Pesos devem ser números maiores ou iguais a zero.');
       return;
     }
     try {
@@ -462,8 +462,8 @@ export default function ConfigPage() {
       if (!res.ok) { const d = await res.json(); showMsg(d.message || 'Erro'); return; }
       const data = await res.json();
       if (Array.isArray(data)) setSoftConstraints(data);
-      showMsg('Pesos das restricoes salvos!');
-    } catch (err) { showMsg('Erro de conexao'); }
+      showMsg('Pesos das restrições salvos!');
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const handlePeriodosPrevious = () => {
@@ -554,8 +554,8 @@ export default function ConfigPage() {
 
       {activeTab === 'periodos' && (
         <div className="config-section config-section--stacked">
-          <h3>Horarios da Escola (Periodos)</h3>
-          <p className="config-hint">Para cada turno, marque os dias da semana, defina a hora do 1o periodo e clique em Gerar. Os horarios sao calculados e os time slots criados apenas para os dias marcados. Gerar substitui os periodos existentes do turno.</p>
+          <h3>Horários da Escola (Períodos)</h3>
+          <p className="config-hint">Para cada turno, marque os dias da semana, defina a hora do 1º período e clique em Gerar. Os horários são calculados e os time slots criados apenas para os dias marcados. Gerar substitui os períodos existentes do turno.</p>
 
           <div className="periodos-block">
             <h4>Turnos</h4>
@@ -603,11 +603,11 @@ export default function ConfigPage() {
 
           <div className="periodos-block">
             <div className="periodos-block-header">
-              <h4>Periodos cadastrados</h4>
+              <h4>Períodos cadastrados</h4>
               <Button variant="warning" onClick={handleRegenerateSlots}>Regenerar Time Slots</Button>
             </div>
             <div className="data-table-wrapper">
-              <DataTable headers={['Turno', 'N', 'Inicio', 'Fim', 'Tipo', '']} rows={periodos.items} emptyText="Nenhum periodo cadastrado">
+              <DataTable headers={['Turno', 'N', 'Início', 'Fim', 'Tipo', '']} rows={periodos.items} emptyText="Nenhum período cadastrado">
                 {periodos.items.map(p => (
                   <tr key={p.id} className={p.tipo !== 'aula' ? 'row-intervalo' : ''}>
                     <td>{p.turno_nome}</td>
@@ -644,7 +644,7 @@ export default function ConfigPage() {
             </form>
           </div>
           <div className="data-table-wrapper">
-            <DataTable headers={['Nome', 'Email', 'Carga Max', '']} rows={professores} emptyText="Nenhum professor cadastrado">
+            <DataTable headers={['Nome', 'Email', 'Carga Máx.', '']} rows={professores} emptyText="Nenhum professor cadastrado">
             {professores.map(p => (
               <tr key={p.id}>
                 <td>{p.nome}</td>
@@ -719,7 +719,7 @@ export default function ConfigPage() {
             </form>
           </div>
           <div className="data-table-wrapper">
-            <DataTable headers={['Nome', 'Serie', 'Ano', 'Turno', '']} rows={turmas} emptyText="Nenhuma turma cadastrada">
+            <DataTable headers={['Nome', 'Série', 'Ano', 'Turno', '']} rows={turmas} emptyText="Nenhuma turma cadastrada">
             {turmas.map(t => (
               <tr key={t.id}>
                 <td>{t.nome}</td>
@@ -739,7 +739,7 @@ export default function ConfigPage() {
 
       {activeTab === 'atribuicoes' && (
         <div className="config-section">
-          <h3>Atribuicoes (Turma + Disciplina + Professor)</h3>
+          <h3>Atribuições (Turma + Disciplina + Professor)</h3>
           <div className="config-form-wrapper">
             <form className="config-form" onSubmit={handleAddTD}>
               <label>Turma</label>
@@ -767,7 +767,7 @@ export default function ConfigPage() {
             </form>
           </div>
           <div className="data-table-wrapper">
-            <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinasPage.items} emptyText="Nenhuma atribuicao cadastrada">
+            <DataTable headers={['Turma', 'Disciplina', 'Professor', 'Aulas/sem', 'Bloco', '']} rows={turmaDisciplinasPage.items} emptyText="Nenhuma atribuição cadastrada">
             {turmaDisciplinasPage.items.map(td => (
               <tr key={td.id}>
                 <td>{td.turma_nome}</td>
@@ -788,17 +788,17 @@ export default function ConfigPage() {
 
       {activeTab === 'restricoes' && (
         <div className="config-section config-section--stacked">
-          <h3>Restricoes Soft (pesos do gerador)</h3>
+          <h3>Restrições Soft (pesos do gerador)</h3>
           <p className="config-hint">
-            Ajuste a importancia de cada restricao soft usada ao gerar a grade. Peso maior
-            torna a restricao mais forte; peso 0 a desativa. As mudancas valem para as
-            proximas geracoes de grade.
+            Ajuste a importância de cada restrição soft usada ao gerar a grade. Peso maior
+            torna a restrição mais forte; peso 0 a desativa. As mudanças valem para as
+            próximas gerações de grade.
           </p>
           <div className="data-table-wrapper">
             <DataTable
               headers={['Codigo', 'Restricao', 'Descricao', 'Peso']}
               rows={softConstraints}
-              emptyText="Nenhuma restricao cadastrada"
+              emptyText="Nenhuma restrição cadastrada"
             >
               {softConstraints.map((sc) => (
                 <tr key={sc.codigo}>

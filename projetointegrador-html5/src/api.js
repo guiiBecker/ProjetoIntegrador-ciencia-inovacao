@@ -18,7 +18,7 @@ export async function apiJson(path, options = {}) {
 	const response = await apiFetch(path, options);
 	const data = await response.json().catch(() => null);
 	if (!response.ok) {
-		const error = new Error(data?.message || 'Erro na requisicao');
+		const error = new Error(data?.message || 'Erro na requisição');
 		error.status = response.status;
 		error.data = data;
 		throw error;

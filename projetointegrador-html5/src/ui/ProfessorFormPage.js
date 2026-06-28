@@ -24,7 +24,7 @@ export default function ProfessorFormPage({ token }) {
         }
         setLoading(false);
       })
-      .catch(() => { setError('Link invalido'); setLoading(false); });
+      .catch(() => { setError('Link inválido'); setLoading(false); });
   }, [token]);
 
   const toggleDisponivel = (slotId) => {
@@ -61,7 +61,7 @@ export default function ProfessorFormPage({ token }) {
       }
       setSubmitted(true);
     } catch (err) {
-      setError('Erro de conexao');
+      setError('Erro de conexão');
     }
   };
 
@@ -72,7 +72,7 @@ export default function ProfessorFormPage({ token }) {
       <div className="form-page">
         <div className="form-success">
           <h2>Obrigado, {formData?.professor_nome}!</h2>
-          <p>Sua disponibilidade ja foi registrada com sucesso.</p>
+          <p>Sua disponibilidade já foi registrada com sucesso.</p>
         </div>
       </div>
     );
@@ -84,16 +84,23 @@ export default function ProfessorFormPage({ token }) {
     turnoGroups[slot.turno_nome].push(slot);
   }
 
-  const dias = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta'];
+  // keys must match dia_nome stored in the DB; labels are the accented display names
+  const dias = [
+    { key: 'Segunda', label: 'Segunda' },
+    { key: 'Terca',   label: 'Terça'   },
+    { key: 'Quarta',  label: 'Quarta'  },
+    { key: 'Quinta',  label: 'Quinta'  },
+    { key: 'Sexta',   label: 'Sexta'   },
+  ];
 
   return (
     <div className="form-page">
       <div className="form-header">
         <h2>Disponibilidade - {formData.professor_nome}</h2>
-        <p>Marque os horarios em que voce esta disponivel e sua preferencia (1-5).</p>
+        <p>Marque os horários em que você está disponível e sua preferência (1-5).</p>
         <p className="form-legend">
-          <span className="legend-available">Disponivel</span>
-          <span className="legend-unavailable">Indisponivel</span>
+          <span className="legend-available">Disponível</span>
+          <span className="legend-unavailable">Indisponível</span>
         </p>
       </div>
 
@@ -112,8 +119,8 @@ export default function ProfessorFormPage({ token }) {
             <table className="form-grid">
               <thead>
                 <tr>
-                  <th>Horario</th>
-                  {dias.map(d => <th key={d}>{d}</th>)}
+                  <th>Horário</th>
+                  {dias.map(d => <th key={d.key}>{d.label}</th>)}
                 </tr>
               </thead>
               <tbody>
@@ -122,7 +129,7 @@ export default function ProfessorFormPage({ token }) {
                   return (
                     <tr key={pNum}>
                       <td className="periodo-cell">{refSlot?.hora_inicio?.slice(0,5)} - {refSlot?.hora_fim?.slice(0,5)}</td>
-                      {dias.map(dia => {
+                      {dias.map(({ key: dia, label: diaLabel }) => {
                         const slot = slotMap[`${dia}-${pNum}`];
                         if (!slot) return <td key={dia} className="empty-cell">-</td>;
                         const av = availability[slot.time_slot_id];
@@ -131,7 +138,7 @@ export default function ProfessorFormPage({ token }) {
                           <td key={dia}
                             className={`form-slot-cell ${isAvailable ? 'slot-available' : 'slot-unavailable'}`}
                             onClick={() => toggleDisponivel(slot.time_slot_id)}>
-                            <div className="slot-status">{isAvailable ? 'Sim' : 'Nao'}</div>
+                            <div className="slot-status">{isAvailable ? 'Sim' : 'Não'}</div>
                             {isAvailable && (
                               <select className="pref-select"
                                 value={av.preferencia}

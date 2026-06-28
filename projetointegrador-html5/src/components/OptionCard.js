@@ -5,8 +5,8 @@ import TimetableGrid from './TimetableGrid';
 import './OptionCard.css';
 
 const STRATEGY_LABELS = {
-  greedy_best_preference: 'Melhor Preferencia',
-  balanced_distribution: 'Distribuicao Equilibrada',
+  greedy_best_preference: 'Melhor Preferência',
+  balanced_distribution: 'Distribuição Equilibrada',
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
 
@@ -45,12 +45,12 @@ export default function OptionCard({ option, onSelect, isSelected, editable, sel
         {!isConfirmed && (
           isSelected
             ? <Badge variant="selected">Selecionada</Badge>
-            : <Button variant="select" onClick={() => onSelect(option.id)}>Selecionar esta opcao</Button>
+            : <Button variant="select" onClick={() => onSelect(option.id)}>Selecionar esta opção</Button>
         )}
       </div>
 
       {isSelected && editable && (
-        <div className="edit-hint">Arraste uma aula para um horario vazio para mover, ou solte-a sobre outra aula da mesma turma para trocar. (Tambem funciona com clique-clique.)</div>
+        <div className="edit-hint">Arraste uma aula para um horário vazio para mover, ou solte-a sobre outra aula da mesma turma para trocar. (Também funciona com clique-clique.)</div>
       )}
 
       {turmaNames.length > 0 && (

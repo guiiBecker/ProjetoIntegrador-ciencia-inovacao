@@ -54,7 +54,7 @@ export default function ProfessoresPage() {
       if (!res.ok) { showMsg(data.message || 'Erro'); return; }
       showMsg('Link gerado com sucesso!');
       loadData(professoresPage.page, 1);
-    } catch (err) { showMsg('Erro de conexao'); }
+    } catch (err) { showMsg('Erro de conexão'); }
   };
 
   const copyLink = (token) => {

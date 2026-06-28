@@ -35,7 +35,7 @@ function ViewGrid({ title, items, renderCell, multiPerCell }) {
       <table className="view-table">
         <thead>
           <tr>
-            <th>Horario</th>
+            <th>Horário</th>
             {dias.map((d) => <th key={d.id}>{d.nome}</th>)}
           </tr>
         </thead>

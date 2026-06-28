@@ -14,14 +14,14 @@ import ScheduleViewerPage from './ui/ScheduleViewerPage';
 import { apiFetch, apiJson } from './api';
 
 const ADMIN_NAV_ITEMS = [
-  { key: 'config', label: 'Configuracao' },
+  { key: 'config', label: 'Configuração' },
   { key: 'professores', label: 'Professores' },
   { key: 'grade', label: 'Gerar Grade' },
-  { key: 'usuarios', label: 'Usuarios' },
+  { key: 'usuarios', label: 'Usuários' },
 ];
 
 const USER_NAV_ITEMS = [
-  { key: 'grades', label: 'Horarios' },
+  { key: 'grades', label: 'Horários' },
 ];
 
 function parseHash() {
@@ -154,13 +154,13 @@ function App() {
   return (
     <div className="auth-shell">
       <Header
-        title="Grade Horaria Escolar"
+        title="Grade Horária Escolar"
         subtitle={auth.role === 'admin' ? 'Painel do administrador' : 'Painel de consulta'}
         rightContent={(
           <div className="auth-session">
             <div className="auth-session-text">
               <span className="auth-session-name">{auth.nome}</span>
-              <span className="auth-session-role">{auth.role === 'admin' ? 'Administrador' : 'Usuario'}</span>
+              <span className="auth-session-role">{auth.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
             </div>
             <Button variant="info" onClick={handleLogout}>Sair</Button>
           </div>

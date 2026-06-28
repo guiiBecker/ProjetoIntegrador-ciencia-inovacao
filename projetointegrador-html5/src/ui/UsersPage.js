@@ -21,7 +21,7 @@ export default function UsersPage() {
       const data = await apiJson(`/api/auth/users?page=${page}&limit=${pageLimit}`);
       setUsersPage(normalizePaginatedResponse(data, pageLimit));
     } catch (err) {
-      setMsg(err.message || 'Erro ao carregar usuarios');
+      setMsg(err.message || 'Erro ao carregar usuários');
     }
   }, [pageLimit]);
 
@@ -46,10 +46,10 @@ export default function UsersPage() {
         body: JSON.stringify(form),
       });
       setForm({ nome: '', email: '', password: '', role: 'user' });
-      showMsg('Usuario criado com sucesso');
+      showMsg('Usuário criado com sucesso');
       loadUsers(usersPage.page);
     } catch (err) {
-      showMsg(err.message || 'Erro ao criar usuario');
+      showMsg(err.message || 'Erro ao criar usuário');
     }
   };
 
@@ -59,10 +59,10 @@ export default function UsersPage() {
     }
     try {
       await apiJson(`/api/auth/users/${userId}`, { method: 'DELETE' });
-      showMsg('Usuario deletado com sucesso');
+      showMsg('Usuário deletado com sucesso');
       loadUsers(usersPage.page);
     } catch (err) {
-      showMsg(err.message || 'Erro ao deletar usuario');
+      showMsg(err.message || 'Erro ao deletar usuário');
     }
   };
 
@@ -76,7 +76,7 @@ export default function UsersPage() {
       <Toast message={msg} />
       <div className="users-header">
         <div>
-          <h3>Usuarios do sistema</h3>
+          <h3>Usuários do sistema</h3>
           <p className="config-hint">Crie perfis de administrador e de consulta para controlar o acesso ao sistema.</p>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function UsersPage() {
               </div>
             </div>
 
-            <Button type="submit">Criar usuario</Button>
+            <Button type="submit">Criar usuário</Button>
           </form>
         </div>
 
@@ -139,7 +139,7 @@ export default function UsersPage() {
           </div>
 
           <div className="data-table-wrapper">
-            <DataTable headers={['Nome', 'E-mail', 'Perfil', 'Status', 'Ação']} rows={filteredUsers} emptyText="Nenhum usuario encontrado">
+            <DataTable headers={['Nome', 'E-mail', 'Perfil', 'Status', 'Ação']} rows={filteredUsers} emptyText="Nenhum usuário encontrado">
             {filteredUsers.map((user) => (
               <tr key={user.id}>
                 <td>{user.nome}</td>

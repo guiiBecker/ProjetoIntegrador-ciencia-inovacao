@@ -22,7 +22,7 @@ export default function TimetableGrid({ items, turmaNome, editable, selectedItem
       <table className="timetable">
         <thead>
           <tr>
-            <th>Horario</th>
+            <th>Horário</th>
             {dias.map(d => <th key={d}>{d}</th>)}
           </tr>
         </thead>

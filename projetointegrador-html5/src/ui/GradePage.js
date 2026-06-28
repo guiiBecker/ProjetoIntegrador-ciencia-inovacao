@@ -7,8 +7,8 @@ import OptionCard from '../components/OptionCard';
 import './GradePage.css';
 
 const STRATEGY_LABELS = {
-  greedy_best_preference: 'Melhor Preferencia',
-  balanced_distribution: 'Distribuicao Equilibrada',
+  greedy_best_preference: 'Melhor Preferência',
+  balanced_distribution: 'Distribuição Equilibrada',
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
 
@@ -103,13 +103,13 @@ export default function GradePage() {
       if (!selectedItem) { setSelectedItem(cell); return; }
       if (selectedItem.item_id === cell.item_id) { setSelectedItem(null); return; }
       if (selectedItem.turma_id !== turmaId) {
-        setEditError('So e possivel trocar aulas dentro da mesma turma');
+        setEditError('Só é possível trocar aulas dentro da mesma turma');
         setSelectedItem(null);
         return;
       }
       if (isProfessorUnavailable(selectedItem.professor_id, cell.dia_id, cell.periodo_numero)
         || isProfessorUnavailable(cell.professor_id, selectedItem.dia_id, selectedItem.periodo_numero)) {
-        setEditError('Professor nao disponivel no horario destino');
+        setEditError('Professor não disponível no horário de destino');
         setSelectedItem(null);
         return;
       }
@@ -120,18 +120,18 @@ export default function GradePage() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { setEditError(data.message || 'Erro ao trocar aulas'); }
         else { await fetchDetail(activeRequest.id); }
-      } catch (err) { setEditError('Erro de conexao ao trocar aulas'); }
+      } catch (err) { setEditError('Erro de conexão ao trocar aulas'); }
       setSelectedItem(null);
       return;
     }
     if (!selectedItem) return;
     if (selectedItem.turma_id !== turmaId) {
-      setEditError('So e possivel mover aulas dentro da mesma turma');
+      setEditError('Só é possível mover aulas dentro da mesma turma');
       setSelectedItem(null);
       return;
     }
     if (!diaId || !periodoNum) {
-      setEditError('Nao foi possivel identificar o horario de destino');
+      setEditError('Não foi possível identificar o horário de destino');
       setSelectedItem(null);
       return;
     }
@@ -140,7 +140,7 @@ export default function GradePage() {
       return;
     }
     if (isProfessorUnavailable(selectedItem.professor_id, diaId, periodoNum)) {
-      setEditError('Professor nao disponivel neste horario');
+      setEditError('Professor não disponível neste horário');
       setSelectedItem(null);
       return;
     }
@@ -152,7 +152,7 @@ export default function GradePage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setEditError(data.message || 'Erro ao mover aula'); }
       else { await fetchDetail(activeRequest.id); }
-    } catch (err) { setEditError('Erro de conexao ao mover aula'); }
+    } catch (err) { setEditError('Erro de conexão ao mover aula'); }
     setSelectedItem(null);
   };
 
@@ -164,10 +164,10 @@ export default function GradePage() {
       setSelectedItem(null); setEditError('');
       await fetchDetail(activeRequest.id);
       await fetchRequests();
-    } catch (err) { setEditError('Erro de conexao ao confirmar'); }
+    } catch (err) { setEditError('Erro de conexão ao confirmar'); }
   };
 
-  const statusLabel = { pending: 'Pendente', processing: 'Processando', completed: 'Concluido', failed: 'Falhou', confirmed: 'Confirmado' };
+  const statusLabel = { pending: 'Pendente', processing: 'Processando', completed: 'Concluído', failed: 'Falhou', confirmed: 'Confirmado' };
   const isConfirmed = activeRequest?.status === 'confirmed';
   const hasSelectedOption = activeRequest?.options?.some((o) => o.selected);
 
@@ -178,7 +178,7 @@ export default function GradePage() {
           {loading ? 'Criando...' : polling ? 'Processando...' : 'Gerar Nova Grade'}
         </Button>
         <div className="request-picker">
-          <label htmlFor="request-select">Versao</label>
+          <label htmlFor="request-select">Versão</label>
           <select
             id="request-select"
             className="request-select"
@@ -190,7 +190,7 @@ export default function GradePage() {
             }}
           >
             <option value="" disabled>
-              {requests.length ? 'Selecione uma versao' : 'Nenhuma requisicao ainda'}
+              {requests.length ? 'Selecione uma versão' : 'Nenhuma requisição ainda'}
             </option>
             {requests.map(r => (
               <option key={r.id} value={r.id}>
@@ -205,15 +205,15 @@ export default function GradePage() {
       </div>
 
       <section className="content">
-          {!activeRequest && <div className="placeholder">Clique em "Gerar Nova Grade" para comecar ou selecione uma requisicao existente.</div>}
-          {activeRequest?.status === 'processing' && <div className="placeholder"><Spinner /><p>Gerando opcoes de grade horaria...</p></div>}
+          {!activeRequest && <div className="placeholder">Clique em "Gerar Nova Grade" para começar ou selecione uma requisição existente.</div>}
+          {activeRequest?.status === 'processing' && <div className="placeholder"><Spinner /><p>Gerando opções de grade horária...</p></div>}
           {activeRequest?.status === 'pending' && <div className="placeholder"><p>Aguardando processamento...</p></div>}
           {activeRequest?.status === 'failed' && <div className="placeholder error"><p>Falha ao gerar grade. Verifique os dados de entrada.</p></div>}
 
           {activeRequest && (activeRequest.status === 'completed' || activeRequest.status === 'confirmed') && activeRequest.options && (
             <div className="options-container">
               <div className="options-header-bar">
-                <h2>{isConfirmed ? `Grade Confirmada - Requisicao #${activeRequest.id}` : `Opcoes de Grade - Requisicao #${activeRequest.id}`}</h2>
+                <h2>{isConfirmed ? `Grade Confirmada - Requisição #${activeRequest.id}` : `Opções de Grade - Requisição #${activeRequest.id}`}</h2>
                 {!isConfirmed && hasSelectedOption && <Button variant="confirm" onClick={handleConfirm}>Confirmar Grade Final</Button>}
               </div>
               {isConfirmed && <div className="confirmed-banner">Grade salva com sucesso na base de dados.</div>}

@@ -68,7 +68,7 @@ export default function ScheduleViewerPage() {
 
   const statusLabel = {
     confirmed: 'Confirmado',
-    completed: 'Concluido',
+    completed: 'Concluído',
     processing: 'Processando',
   };
 
