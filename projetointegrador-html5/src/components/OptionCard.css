@@ -13,8 +13,34 @@
 }
 
 .option-card.selected {
-  border-color: var(--color-success);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15), var(--shadow-md);
+}
+
+.option-card.editing > .option-header {
+  background: #eff6ff;
+  border-bottom-color: var(--color-primary);
+}
+
+.editing-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.editing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1.5px solid #93c5fd;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .option-header {

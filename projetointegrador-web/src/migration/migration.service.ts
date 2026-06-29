@@ -96,6 +96,25 @@ export class MigrationService implements OnApplicationBootstrap {
       CREATE INDEX IF NOT EXISTS idx_turma_segmento ON turma(segmento);
     `);
 
+    // ── app_user: novos roles aluno / professor ──────────────────────────────
+    // Renomeia role 'user' → 'aluno' para usuários existentes
+    await this.runStep('renomear role user para aluno', `
+      UPDATE app_user SET role = 'aluno' WHERE role = 'user';
+    `);
+
+    // Atualiza o CHECK constraint para aceitar os 3 novos perfis
+    await this.runStep('atualizar check constraint role', `
+      DO $$
+      BEGIN
+        ALTER TABLE app_user DROP CONSTRAINT IF EXISTS app_user_role_check;
+        ALTER TABLE app_user ADD CONSTRAINT app_user_role_check
+          CHECK (role IN ('admin', 'aluno', 'professor'));
+        ALTER TABLE app_user ALTER COLUMN role SET DEFAULT 'aluno';
+      EXCEPTION WHEN others THEN NULL;
+      END;
+      $$;
+    `);
+
     this.logger.log('Migrações de schema concluídas.');
   }
 

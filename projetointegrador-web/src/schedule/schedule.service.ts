@@ -352,6 +352,43 @@ export class ScheduleService {
     }
   }
 
+  async restoreOptionItems(
+    requestId: number,
+    optionId: number,
+    items: { id: number; time_slot_id: number }[],
+  ): Promise<{ success: boolean; error?: string }> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const item of items) {
+        await client.query(
+          `UPDATE schedule_option_item SET time_slot_id = $1
+           WHERE id = $2 AND option_id = $3`,
+          [item.time_slot_id, item.id, optionId],
+        );
+      }
+      await client.query('COMMIT');
+      return { success: true };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      return { success: false, error: 'Erro ao restaurar itens' };
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteRequest(id: number): Promise<{ success: boolean; error?: string }> {
+    // ON DELETE CASCADE handles schedule_option and schedule_option_item
+    const result = await this.pool.query(
+      'DELETE FROM schedule_request WHERE id = $1 RETURNING id',
+      [id],
+    );
+    if (result.rows.length === 0) {
+      return { success: false, error: 'Requisição não encontrada' };
+    }
+    return { success: true };
+  }
+
   async confirmSchedule(requestId: number): Promise<{ success: boolean; error?: string }> {
     const reqRes = await this.pool.query(
       'SELECT id, status FROM schedule_request WHERE id = $1',
@@ -360,8 +397,8 @@ export class ScheduleService {
     if (reqRes.rows.length === 0) {
       return { success: false, error: 'Requisicao nao encontrada' };
     }
-    if (reqRes.rows[0].status === 'confirmed') {
-      return { success: false, error: 'Requisicao ja confirmada' };
+    if (!['completed', 'confirmed'].includes(reqRes.rows[0].status)) {
+      return { success: false, error: 'Requisicao em estado invalido para confirmacao' };
     }
 
     const optRes = await this.pool.query(

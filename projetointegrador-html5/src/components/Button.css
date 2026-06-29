@@ -19,10 +19,10 @@
 
 /* Primary */
 .btn-primary {
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.1rem;
   background: var(--color-primary);
   color: white;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -48,10 +48,10 @@
 
 /* Warning */
 .btn-warning {
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.1rem;
   background: var(--color-warning);
   color: white;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .btn-warning:hover:not(:disabled) {
@@ -62,7 +62,7 @@
 
 /* Info */
 .btn-info {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.1rem;
   background: var(--color-primary);
   color: white;
   font-size: 0.9rem;
@@ -100,13 +100,14 @@
   cursor: not-allowed;
 }
 
-/* Confirm */
+/* Confirm / Salvar Grade */
 .btn-confirm {
-  padding: 0.75rem 1.5rem;
+  padding: 0.6rem 1.1rem;
   background: var(--color-success);
   color: white;
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 .btn-confirm:hover:not(:disabled) {
@@ -115,19 +116,100 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Select */
+/* Select (Editar Horários) */
 .btn-select {
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.1rem;
   background: var(--color-neutral-100);
   color: var(--color-neutral-900);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   border: 1px solid var(--color-neutral-300);
+  flex-shrink: 0;
 }
 
 .btn-select:hover:not(:disabled) {
   background: var(--color-neutral-200);
   border-color: var(--color-neutral-400);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Save edit (Salvar Edição) */
+.btn-save-edit {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  color: #059669;
+  border: 1.5px solid #059669;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-save-edit:hover:not(:disabled) {
+  background: #f0fdf4;
+  transform: translateY(-1px);
+}
+
+/* Cancel edit (Cancelar) */
+.btn-cancel-edit {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-cancel-edit:hover:not(:disabled) {
+  background: #fef2f2;
+  transform: translateY(-1px);
+}
+
+/* PDF export */
+.btn-pdf {
+  padding: 0.6rem 1.1rem;
+  background: #7c3aed;
+  color: white;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.btn-pdf:hover:not(:disabled) {
+  background: #6d28d9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Delete version */
+.btn-delete {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #fef2f2;
+  transform: translateY(-1px);
+}
+
+/* Secondary (neutral outlined) */
+.btn-secondary {
+  padding: 0.6rem 1.1rem;
+  background: white;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 /* Submit */

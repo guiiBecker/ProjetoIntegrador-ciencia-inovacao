@@ -12,14 +12,14 @@ interface AppUserRow {
   nome: string;
   email: string;
   senha_hash: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'aluno' | 'professor';
   ativo: boolean;
 }
 
 interface SessionPayload {
   sub: number;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'aluno' | 'professor';
   exp: number;
 }
 

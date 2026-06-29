@@ -108,7 +108,7 @@ INSERT INTO disciplina (id, nome, sigla, peso) VALUES
 INSERT INTO professor (id, nome, email, carga_horaria_max, ativo) VALUES
     (1,  'Alan',     NULL,                          25, TRUE),  -- MAT 5xEF (C61-C82): 5t*5=25 (*)
     (2,  'Carla',    NULL,                          17, TRUE),  -- MAT C91(5)+3EM(4*3=12)=17 (*)
-    (3,  'Carlos',   'igor.paslauski123@gmail.com', 15, TRUE),  -- ING 6EF(2*6=12)+3EM(1*3=3)=15 (*)
+    (3,  'Carlos',   NULL,                          15, TRUE),  -- ING 6EF(2*6=12)+3EM(1*3=3)=15 (*)
     (4,  'Elis',     NULL,                           6, TRUE),  -- CIE 2xEF (C61-C62): 2t*3=6
     (5,  'Fabiane',  NULL,                           5, TRUE),  -- GEO C91(3)+211(2)=5
     (6,  'Gabriela', NULL,                          12, TRUE),  -- RED 3EM: 3t*2=6 (folga p/ novas turmas)

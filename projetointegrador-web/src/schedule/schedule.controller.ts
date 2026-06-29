@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Param,
   Body,
   Query,
@@ -136,6 +137,34 @@ export class ScheduleController {
         result.error || 'Erro ao trocar aulas',
         HttpStatus.BAD_REQUEST,
       );
+    }
+    return { success: true };
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  async deleteRequest(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ success: boolean }> {
+    const result = await this.scheduleService.deleteRequest(id);
+    if (!result.success) {
+      throw new HttpException(
+        result.error || 'Erro ao deletar requisição',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return { success: true };
+  }
+
+  @Post(':id/restore-items')
+  @Roles('admin')
+  async restoreOptionItems(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { optionId: number; items: { id: number; time_slot_id: number }[] },
+  ): Promise<{ success: boolean }> {
+    const result = await this.scheduleService.restoreOptionItems(id, body.optionId, body.items);
+    if (!result.success) {
+      throw new HttpException(result.error || 'Erro ao restaurar itens', HttpStatus.BAD_REQUEST);
     }
     return { success: true };
   }

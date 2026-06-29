@@ -10,7 +10,7 @@ const STRATEGY_LABELS = {
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
 
-export default function OptionCard({ option, onSelect, isSelected, editable, selectedItem, onCellClick, onCellDragStart, onCellDrop, onCellDragEnd, professorAvailability, isConfirmed, activeTurma, onTurmaChange }) {
+export default function OptionCard({ option, onEditToggle, onCancelEdit, onSaveEdit, isEditing, editable, selectedItem, onCellClick, onCellDragStart, onCellDrop, onCellDragEnd, professorAvailability, isConfirmed, activeTurma, onTurmaChange }) {
   const turmaGroups = {};
   for (const item of option.items || []) {
     if (!turmaGroups[item.turma_nome]) {
@@ -36,21 +36,25 @@ export default function OptionCard({ option, onSelect, isSelected, editable, sel
   const turmaData = currentTurma ? turmaGroups[currentTurma] : null;
 
   return (
-    <div className={`option-card ${isSelected ? 'selected' : ''}`}>
+    <div className={`option-card ${isEditing ? 'selected editing' : ''}`}>
       <div className="option-header">
         <div className="option-header-info">
           <h3>{STRATEGY_LABELS[option.strategy] || option.strategy}</h3>
           <Badge variant="score">Score: {option.score}</Badge>
         </div>
-        {!isConfirmed && (
-          isSelected
-            ? <Badge variant="selected">Selecionada</Badge>
-            : <Button variant="select" onClick={() => onSelect(option.id)}>Selecionar esta opção</Button>
-        )}
+        {isEditing
+          ? <div className="editing-controls">
+              <Button variant="cancel-edit" onClick={onCancelEdit}>Cancelar</Button>
+              <Button variant="save-edit" onClick={onSaveEdit}>Salvar Edição</Button>
+            </div>
+          : <Button variant="select" onClick={onEditToggle}>Editar Horários</Button>
+        }
       </div>
 
-      {isSelected && editable && (
-        <div className="edit-hint">Arraste uma aula para um horário vazio para mover, ou solte-a sobre outra aula da mesma turma para trocar. (Também funciona com clique-clique.)</div>
+      {isEditing && (
+        <div className="edit-hint">
+          ✏️ <strong>Modo edição ativo.</strong> Arraste uma aula para outro horário vazio para mover, ou arraste sobre outra aula da mesma turma para trocar. Movimentos inválidos serão bloqueados automaticamente.
+        </div>
       )}
 
       {turmaNames.length > 0 && (
@@ -74,7 +78,7 @@ export default function OptionCard({ option, onSelect, isSelected, editable, sel
             key={currentTurma}
             items={turmaData.items}
             turmaNome={currentTurma}
-            editable={editable && isSelected}
+            editable={editable && isEditing}
             selectedItem={selectedItem}
             onCellClick={onCellClick}
             onCellDragStart={onCellDragStart}

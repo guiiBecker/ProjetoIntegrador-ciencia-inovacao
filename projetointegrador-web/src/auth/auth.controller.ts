@@ -82,7 +82,7 @@ export class AuthController {
       throw new HttpException('Campos obrigatorios: nome, email, password, role', HttpStatus.BAD_REQUEST);
     }
 
-    if (!['admin', 'user'].includes(body.role)) {
+    if (!['admin', 'aluno', 'professor'].includes(body.role)) {
       throw new HttpException('Role invalida', HttpStatus.BAD_REQUEST);
     }
 

@@ -92,62 +92,36 @@
   letter-spacing: 0.3px;
 }
 
-.role-switch-container {
+.role-options {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 0;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
 }
 
-.role-label {
-  font-size: 0.9rem;
-  color: #94a3b8;
+.role-option {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 0.88rem;
   font-weight: 500;
-  transition: color 0.3s ease;
-  min-width: 70px;
-}
-
-.role-label.active {
-  color: #3b82f6;
-  font-weight: 600;
-}
-
-.role-switch {
-  display: inline-flex;
-  align-items: center;
-  width: 56px;
-  height: 32px;
-  background-color: #e2e8f0;
-  border: 2px solid #cbd5e1;
-  border-radius: 16px;
-  padding: 2px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0;
-  position: relative;
+  transition: all 0.15s;
+  font-family: inherit;
 }
 
-.role-switch:hover {
+.role-option:hover {
   border-color: #94a3b8;
+  color: #334155;
 }
 
-.role-switch.active {
-  background-color: #3b82f6;
-  border-color: #2563eb;
-}
-
-.switch-circle {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  background-color: white;
-  border-radius: 50%;
-  transition: transform 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.role-switch.active .switch-circle {
-  transform: translateX(24px);
+.role-option.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  font-weight: 600;
 }
 
 /* COLUNA DA LISTA */

@@ -14,7 +14,15 @@ export default function UsersPage() {
   const [usersPage, setUsersPage] = useState({ items: [], page: 1, limit: DEFAULT_PAGE_LIMIT, total: 0, totalPages: 0 });
   const [msg, setMsg] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
-  const [form, setForm] = useState({ nome: '', email: '', password: '', role: 'user' });
+  const [form, setForm] = useState({ nome: '', email: '', password: '', role: 'aluno' });
+
+  const ROLES = [
+    { value: 'admin',     label: 'Administrador' },
+    { value: 'professor', label: 'Professor' },
+    { value: 'aluno',     label: 'Aluno' },
+  ];
+
+  const ROLE_LABEL = { admin: 'Administrador', professor: 'Professor', aluno: 'Aluno' };
 
   const loadUsers = useCallback(async (page = 1) => {
     try {
@@ -45,7 +53,7 @@ export default function UsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      setForm({ nome: '', email: '', password: '', role: 'user' });
+      setForm({ nome: '', email: '', password: '', role: 'aluno' });
       showMsg('Usuário criado com sucesso');
       loadUsers(usersPage.page);
     } catch (err) {
@@ -76,8 +84,8 @@ export default function UsersPage() {
       <Toast message={msg} />
       <div className="users-header">
         <div>
-          <h3>Usuários do sistema</h3>
-          <p className="config-hint">Crie perfis de administrador e de consulta para controlar o acesso ao sistema.</p>
+          <h3>Gerenciamento de Usuários</h3>
+          <p className="config-hint">Cadastre usuários com perfil de Administrador, Professor ou Aluno e controle o acesso ao sistema.</p>
         </div>
       </div>
 
@@ -109,20 +117,21 @@ export default function UsersPage() {
             
             <div className="role-section">
               <label>Tipo de Perfil</label>
-              <div className="role-switch-container">
-                <span className={`role-label ${form.role === 'user' ? 'active' : ''}`}>Usuário</span>
-                <button
-                  type="button"
-                  className={`role-switch ${form.role === 'admin' ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, role: form.role === 'user' ? 'admin' : 'user' })}
-                >
-                  <span className="switch-circle"></span>
-                </button>
-                <span className={`role-label ${form.role === 'admin' ? 'active' : ''}`}>Admin</span>
+              <div className="role-options">
+                {ROLES.map(r => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    className={`role-option ${form.role === r.value ? 'active' : ''}`}
+                    onClick={() => setForm({ ...form, role: r.value })}
+                  >
+                    {r.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <Button type="submit">Criar usuário</Button>
+            <Button type="submit">Criar Usuário</Button>
           </form>
         </div>
 
@@ -144,13 +153,13 @@ export default function UsersPage() {
               <tr key={user.id}>
                 <td>{user.nome}</td>
                 <td>{user.email}</td>
-                <td><Badge variant={user.role === 'admin' ? 'selected' : 'extra'}>{user.role}</Badge></td>
+                <td>{ROLE_LABEL[user.role] || user.role}</td>
                 <td>{user.ativo ? 'Ativo' : 'Inativo'}</td>
                 <td>
                   <button
                     type="button"
                     onClick={() => handleDelete(user.id, user.nome)}
-                    className="btn-delete"
+                    className="btn btn-delete"
                   >
                     Deletar
                   </button>

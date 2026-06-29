@@ -14,10 +14,10 @@ import ScheduleViewerPage from './ui/ScheduleViewerPage';
 import { apiFetch, apiJson } from './api';
 
 const ADMIN_NAV_ITEMS = [
-  { key: 'config', label: 'Configuração' },
-  { key: 'professores', label: 'Professores' },
-  { key: 'grade', label: 'Gerar Grade' },
-  { key: 'usuarios', label: 'Usuários' },
+  { key: 'config', label: 'Configurações' },
+  { key: 'professores', label: 'Disponibilidade' },
+  { key: 'grade', label: 'Grade Horária' },
+  { key: 'usuarios', label: 'Perfis' },
 ];
 
 const USER_NAV_ITEMS = [
@@ -50,6 +50,12 @@ function parseHash() {
 function defaultRouteForRole(role) {
   return role === 'admin' ? 'admin/config' : 'viewer/grades';
 }
+
+const ROLE_LABELS = {
+  admin: 'Administrador',
+  aluno: 'Aluno',
+  professor: 'Professor',
+};
 
 function App() {
   const [route, setRoute] = useState(parseHash());
@@ -101,6 +107,7 @@ function App() {
         window.location.hash = defaultRouteForRole(auth.role);
       }
     }
+
   }, [auth, authLoading, route]);
 
   useEffect(() => {
@@ -160,7 +167,7 @@ function App() {
           <div className="auth-session">
             <div className="auth-session-text">
               <span className="auth-session-name">{auth.nome}</span>
-              <span className="auth-session-role">{auth.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
+              <span className="auth-session-role">{ROLE_LABELS[auth.role] || auth.role}</span>
             </div>
             <Button variant="info" onClick={handleLogout}>Sair</Button>
           </div>
@@ -172,7 +179,7 @@ function App() {
         {auth.role === 'admin' && activePage === 'professores' && <ProfessoresPage />}
         {auth.role === 'admin' && activePage === 'grade' && <GradePage />}
         {auth.role === 'admin' && activePage === 'usuarios' && <UsersPage />}
-        {auth.role === 'user' && activePage === 'grades' && <ScheduleViewerPage />}
+        {(auth.role === 'aluno' || auth.role === 'professor') && activePage === 'grades' && <ScheduleViewerPage />}
       </main>
     </div>
   );
