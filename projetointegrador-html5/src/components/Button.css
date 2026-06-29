@@ -212,6 +212,21 @@
   border-color: #9ca3af;
 }
 
+/* Ghost (used in dark header) */
+.btn-ghost {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
 /* Submit */
 .btn-submit {
   display: block;

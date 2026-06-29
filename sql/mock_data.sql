@@ -160,9 +160,7 @@ INSERT INTO periodo (id, numero, hora_inicio, hora_fim, tipo, turno_id) VALUES
     (4,  4, '10:00', '10:20', 'intervalo', 1),   -- recreio
     (5,  5, '10:20', '11:10', 'aula',      1),
     (6,  6, '11:10', '12:00', 'aula',      1),
-    (7,  7, '12:00', '13:30', 'intervalo', 1),   -- almoco
     -- Turno Tarde (EM: somente segunda-feira) - 5 periodos letivos de 50 min
-    (8,  8, '12:00', '13:30', 'intervalo', 2),   -- almoco
     (9,  9, '13:30', '14:20', 'aula',      2),
     (10, 10,'14:20', '15:10', 'aula',      2),
     (11, 11,'15:10', '16:00', 'aula',      2),   -- 3o periodo tarde

@@ -169,7 +169,7 @@ function App() {
               <span className="auth-session-name">{auth.nome}</span>
               <span className="auth-session-role">{ROLE_LABELS[auth.role] || auth.role}</span>
             </div>
-            <Button variant="info" onClick={handleLogout}>Sair</Button>
+            <button className="auth-logout-btn" onClick={handleLogout}>Sair</button>
           </div>
         )}
       />

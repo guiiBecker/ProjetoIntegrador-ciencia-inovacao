@@ -241,13 +241,13 @@ INSERT INTO dia_semana (nome) VALUES
 
 -- Restricoes soft com pesos default (espelham os pesos historicos do scheduler).
 INSERT INTO soft_constraint (codigo, nome, descricao, peso) VALUES
-    ('SC1', 'Concentracao diaria da disciplina',
+    ('SC1', 'Concentração diária da disciplina',
      'Penaliza muitas aulas da mesma disciplina no mesmo dia para uma turma.', 3),
     ('SC2', 'Aulas consecutivas da disciplina',
-     'Penaliza sequencias longas de periodos seguidos da mesma disciplina.', 3),
+     'Penaliza sequências longas de períodos seguidos da mesma disciplina.', 3),
     ('SC5', 'Janela ociosa do professor',
-     'Penaliza horarios vagos entre aulas do professor no mesmo dia.', 1),
-    ('SC6', 'Disciplina pesada no ultimo periodo',
-     'Penaliza disciplinas cognitivamente pesadas alocadas no ultimo periodo do dia.', 1.5),
-    ('SC7', 'Disciplina pratica no primeiro periodo',
-     'Penaliza disciplinas praticas alocadas no primeiro periodo do dia.', 1);
+     'Penaliza horários vagos entre aulas do professor no mesmo dia.', 1),
+    ('SC6', 'Disciplina pesada no último período',
+     'Penaliza disciplinas cognitivamente pesadas alocadas no último período do dia.', 1.5),
+    ('SC7', 'Disciplina prática no primeiro período',
+     'Penaliza disciplinas práticas alocadas no primeiro período do dia.', 1);

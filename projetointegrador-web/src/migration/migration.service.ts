@@ -70,6 +70,31 @@ export class MigrationService implements OnApplicationBootstrap {
       WHERE NOT EXISTS (SELECT 1 FROM soft_constraint LIMIT 1);
     `);
 
+    // ── soft_constraint: corrigir acentuação dos textos ─────────────────────
+    await this.runStep('corrigir acentuacao soft_constraint', `
+      UPDATE soft_constraint SET
+        nome = 'Concentração diária da disciplina'
+      WHERE codigo = 'SC1' AND nome = 'Concentracao diaria da disciplina';
+
+      UPDATE soft_constraint SET
+        descricao = 'Penaliza sequências longas de períodos seguidos da mesma disciplina.'
+      WHERE codigo = 'SC2';
+
+      UPDATE soft_constraint SET
+        descricao = 'Penaliza horários vagos entre aulas do professor no mesmo dia.'
+      WHERE codigo = 'SC5';
+
+      UPDATE soft_constraint SET
+        nome    = 'Disciplina pesada no último período',
+        descricao = 'Penaliza disciplinas cognitivamente pesadas alocadas no último período do dia.'
+      WHERE codigo = 'SC6';
+
+      UPDATE soft_constraint SET
+        nome    = 'Disciplina prática no primeiro período',
+        descricao = 'Penaliza disciplinas práticas alocadas no primeiro período do dia.'
+      WHERE codigo = 'SC7';
+    `);
+
     // ── turno: para_ensino_medio ─────────────────────────────────────────────
     await this.runStep('coluna turno.para_ensino_medio', `
       ALTER TABLE turno

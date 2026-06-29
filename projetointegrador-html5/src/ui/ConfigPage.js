@@ -799,7 +799,7 @@ export default function ConfigPage() {
 
       {activeTab === 'restricoes' && (
         <div className="config-section config-section--stacked">
-          <h3>Restrições Soft (pesos do gerador)</h3>
+          <h3>Restrições Soft (Pesos do Gerador)</h3>
           <p className="config-hint">
             Ajuste a importância de cada restrição soft usada ao gerar a grade. Peso maior
             torna a restrição mais forte; peso 0 a desativa. As mudanças valem para as
@@ -807,7 +807,7 @@ export default function ConfigPage() {
           </p>
           <div className="data-table-wrapper">
             <DataTable
-              headers={['Codigo', 'Restricao', 'Descricao', 'Peso']}
+              headers={['Código', 'Restrição', 'Descrição', 'Peso']}
               rows={softConstraints}
               emptyText="Nenhuma restrição cadastrada"
             >
@@ -831,7 +831,7 @@ export default function ConfigPage() {
             </DataTable>
           </div>
           <div>
-            <Button onClick={handleSaveSoftConstraints}>Salvar pesos</Button>
+            <Button onClick={handleSaveSoftConstraints}>Salvar Pesos</Button>
           </div>
         </div>
       )}
