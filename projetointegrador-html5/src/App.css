@@ -215,25 +215,25 @@ body {
 
 .auth-session-name {
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   line-height: 1;
   color: white;
 }
 
 .auth-session-role {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.55);
 }
 
 .auth-logout-btn {
   margin-left: 0.25rem;
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1.2rem;
   background: transparent;
   color: rgba(255, 255, 255, 0.85);
   border: 1.5px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;

@@ -10,7 +10,6 @@ import './GradePage.css';
 
 // ── PDF export ─────────────────────────────────────────────────────────────────
 const STRATEGY_LABELS_PDF = {
-  greedy_best_preference: 'Melhor Preferência',
   balanced_distribution: 'Distribuição Equilibrada',
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
@@ -77,7 +76,7 @@ function exportSchedulePDF(option, requestId) {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text(`Versão #${requestId}  ·  ${stratLabel}  ·  Score ${option.score}`, margin, 18);
+    doc.text(`Versão #${requestId}  ·  ${stratLabel}`, margin, 18);
 
     // Separator line
     doc.setDrawColor(200, 200, 200);
@@ -183,7 +182,6 @@ function exportSchedulePDF(option, requestId) {
 }
 
 const STRATEGY_LABELS = {
-  greedy_best_preference: 'Melhor Preferência',
   balanced_distribution: 'Distribuição Equilibrada',
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
@@ -522,7 +520,7 @@ export default function GradePage() {
                     className={`option-tab ${activeOptionId === opt.id ? 'active' : ''} ${editingOptionId === opt.id ? 'is-selected' : ''}`}
                     onClick={() => { setActiveOptionId(opt.id); setSelectedItem(null); setEditError(''); if (editingOptionId !== opt.id) setEditingOptionId(null); }}>
                     <span className="option-tab-label">{STRATEGY_LABELS[opt.strategy] || opt.strategy}</span>
-                    <span className="option-tab-meta">Score {opt.score}{editingOptionId === opt.id ? ' • Em edição' : ''}</span>
+                    {editingOptionId === opt.id && <span className="option-tab-meta">Em edição</span>}
                   </button>
                 ))}
               </div>

@@ -229,6 +229,37 @@ export function markSlots(
   }
 }
 
+// Inverse of markSlots — removes a block's occupancy from the state maps.
+function unmarkSlots(
+  state: ScheduleState,
+  td: TurmaDisciplina,
+  diaId: number,
+  slots: TimeSlotInfo[],
+): void {
+  const profSet = state.professorUsed.get(td.professor_id);
+  if (profSet) for (const s of slots) profSet.delete(s.id);
+  const turmaSet = state.turmaUsed.get(td.turma_id);
+  if (turmaSet) for (const s of slots) turmaSet.delete(s.id);
+  const dayMap = state.disciplinaPerDay.get(td.turma_id);
+  if (dayMap) {
+    const m = dayMap.get(diaId);
+    if (m) {
+      const n = (m.get(td.disciplina_id) ?? 0) - slots.length;
+      if (n <= 0) m.delete(td.disciplina_id); else m.set(td.disciplina_id, n);
+    }
+  }
+  const periodMap = state.disciplinaPerPeriod.get(td.turma_id);
+  if (periodMap) {
+    for (const s of slots) {
+      const m = periodMap.get(s.periodo_numero);
+      if (m) {
+        const n = (m.get(td.disciplina_id) ?? 0) - 1;
+        if (n <= 0) m.delete(td.disciplina_id); else m.set(td.disciplina_id, n);
+      }
+    }
+  }
+}
+
 export function buildProfDispMap(
   profDisps: ProfDisp[],
 ): Map<number, Map<number, ProfDisp>> {
@@ -768,26 +799,33 @@ function buildGreedy(
     }
   }
 
+  // Size-1 fallback: fill remaining aulas one slot at a time.
+  // Handles tamanho_bloco > 1 when free slots are on different days.
+  const slotCount = new Map<number, number>();
+  for (const b of placed) slotCount.set(b.td.id, (slotCount.get(b.td.id) ?? 0) + b.slots.length);
+  for (const { td } of scored) {
+    let filled = slotCount.get(td.id) ?? 0;
+    while (filled < td.aulas_semana) {
+      const candidates = td.allowed_turno_ids.flatMap((turnoId) =>
+        findValidBlocks(td, 1, getSlotsByTurnoAndDay(slots, turnoId), profDispMap, state),
+      );
+      if (candidates.length === 0) break;
+      const ranked: ScoredCandidate[] = candidates
+        .map((cand) => ({ cand, score: greedyCandidateScore(cand, weights) }))
+        .sort((a, b) => b.score - a.score);
+      const chosen = pick(ranked, rng);
+      markSlots(state, td, chosen.diaId, chosen.slots);
+      placed.push({ td, slots: chosen.slots });
+      slotCount.set(td.id, filled + 1);
+      filled++;
+    }
+  }
+
   return placed;
 }
 
 // ===================== Strategies =====================
 
-// Strategy 1: greedy best preference + spread (deterministic top-1 choice).
-export function strategyGreedy(
-  tds: TurmaDisciplina[],
-  slots: TimeSlotInfo[],
-  profDisps: ProfDisp[],
-  weights: SoftWeights = DEFAULT_WEIGHTS,
-): ScheduleResult {
-  const profDispMap = buildProfDispMap(profDisps);
-  const assignments = blocksToAssignments(buildGreedy(tds, slots, profDispMap, pickTop, Math.random, weights));
-  return {
-    strategy: 'greedy_best_preference',
-    assignments,
-    score: composeScore(tds, assignments, slots, profDispMap, weights),
-  };
-}
 
 // Strategy 2: balanced distribution.
 // Primary: even daily load per turma. Secondary: avoid same-discipline same-day
@@ -802,21 +840,24 @@ export function strategyBalanced(
   const state = newState();
   const dayLoad = new Map<number, Map<number, number>>();
 
-  // Like buildGreedy, sort highly-loaded professors first so they can claim slots
-  // before other TDs consume them. Primary: aulas_semana descending; secondary:
-  // professor total load descending (critical professors first).
+  // PRIMARY: professor total load descending — highly-loaded professors (Alan 24+,
+  // Rosana 14 across C61+C62) claim all their turma slots as a group before
+  // less-loaded professors interfere. This prevents cross-turma slot deadlocks.
+  // SECONDARY: individual aulas_semana descending (larger blocks first).
+  // TERTIARY: turma_id ascending (stable ordering).
   const profTotalAulasB = new Map<number, number>();
   for (const td of tds) {
     profTotalAulasB.set(td.professor_id, (profTotalAulasB.get(td.professor_id) ?? 0) + td.aulas_semana);
   }
   const sorted = [...tds].sort((a, b) => {
-    if (a.aulas_semana !== b.aulas_semana) return b.aulas_semana - a.aulas_semana;
     const loadA = profTotalAulasB.get(a.professor_id) ?? 0;
     const loadB = profTotalAulasB.get(b.professor_id) ?? 0;
-    return loadB - loadA;
+    if (loadA !== loadB) return loadB - loadA;
+    if (a.aulas_semana !== b.aulas_semana) return b.aulas_semana - a.aulas_semana;
+    return a.turma_id - b.turma_id;
   });
   const allAssignments: Assignment[] = [];
-
+  const balPlaced: PlacedBlock[] = [];
   const placeBlock = (td: TurmaDisciplina, blockSize: number): boolean => {
     if (!dayLoad.has(td.turma_id)) dayLoad.set(td.turma_id, new Map());
     const turmaLoad = dayLoad.get(td.turma_id)!;
@@ -841,8 +882,10 @@ export function strategyBalanced(
     for (const s of chosen.slots) {
       allAssignments.push({ turma_disciplina_id: td.id, time_slot_id: s.id });
     }
+    balPlaced.push({ td, slots: chosen.slots }); // tracked for displacement repair
     return true;
   };
+
 
   const balPlacedCount = new Map<number, number>();
   for (const td of sorted) {
@@ -857,16 +900,163 @@ export function strategyBalanced(
     }
   }
 
-  // Repair pass: retry any TD that wasn't fully placed.
+  // Repair pass 1: retry TDs not fully placed (original block sizes).
   for (const td of sorted) {
     const plannedBlocks = planBlocks(td.aulas_semana, td.tamanho_bloco);
     let placed = balPlacedCount.get(td.id) ?? 0;
     if (placed >= plannedBlocks.length) continue;
     for (let k = 0; k < plannedBlocks.length - placed; k++) {
-      // Try each remaining block size; planBlocks is already [block, block, ..., remainder]
-      // so attempt the first missing block size repeatedly.
       const blockSize = plannedBlocks[placed + k] ?? plannedBlocks[plannedBlocks.length - 1];
       if (placeBlock(td, blockSize)) placed++;
+    }
+  }
+
+  // Repair pass 2: fill remaining aulas with block size 1 (handles tamanho_bloco > 1
+  // when free slots are on different days / non-consecutive positions).
+  const aCount = new Map<number, number>();
+  for (const a of allAssignments) aCount.set(a.turma_disciplina_id, (aCount.get(a.turma_disciplina_id) ?? 0) + 1);
+  for (const td of sorted) {
+    let filled = aCount.get(td.id) ?? 0;
+    while (filled < td.aulas_semana) {
+      if (placeBlock(td, 1)) { filled++; aCount.set(td.id, filled); }
+      else break;
+    }
+  }
+
+  // Same-turma displacement repair: for any still-missing aula, relocate a
+  // same-turma placed block so the missing professor gains a free slot.
+  for (const missingTd of sorted) {
+    let filled = aCount.get(missingTd.id) ?? 0;
+    if (filled >= missingTd.aulas_semana) continue;
+    outerSame: for (let pi = balPlaced.length - 1; pi >= 0 && filled < missingTd.aulas_semana; pi--) {
+      const pb = balPlaced[pi];
+      if (pb.td.turma_id !== missingTd.turma_id || pb.td.id === missingTd.id) continue;
+      const pbDiaId = pb.slots[0].dia_id;
+      const hasSlot = pb.slots.some((s) => {
+        const d = profDispMap.get(missingTd.professor_id)?.get(s.id);
+        return d?.disponivel && !(state.professorUsed.get(missingTd.professor_id)?.has(s.id));
+      });
+      if (!hasSlot) continue;
+      unmarkSlots(state, pb.td, pbDiaId, pb.slots);
+      const altsSame = pb.td.allowed_turno_ids
+        .flatMap((tid2) =>
+          findValidBlocks(pb.td, pb.slots.length, getSlotsByTurnoAndDay(slots, tid2), profDispMap, state),
+        )
+        .filter((alt) => !alt.slots.some((s) => pb.slots.some((ps) => ps.id === s.id)));
+      if (altsSame.length === 0) { markSlots(state, pb.td, pbDiaId, pb.slots); continue; }
+      const tlSame = dayLoad.get(pb.td.turma_id) ?? new Map<number, number>();
+      altsSame.sort((a, b) => (tlSame.get(a.diaId) ?? 0) - (tlSame.get(b.diaId) ?? 0));
+      const bestSame = altsSame[0];
+      markSlots(state, pb.td, bestSame.diaId, bestSame.slots);
+      for (const s of pb.slots) {
+        const idx = allAssignments.findIndex(
+          (a) => a.turma_disciplina_id === pb.td.id && a.time_slot_id === s.id,
+        );
+        if (idx >= 0) allAssignments.splice(idx, 1);
+      }
+      for (const s of bestSame.slots) {
+        allAssignments.push({ turma_disciplina_id: pb.td.id, time_slot_id: s.id });
+      }
+      tlSame.set(pbDiaId, Math.max(0, (tlSame.get(pbDiaId) ?? 0) - pb.slots.length));
+      tlSame.set(bestSame.diaId, (tlSame.get(bestSame.diaId) ?? 0) + bestSame.slots.length);
+      balPlaced[pi] = { td: pb.td, slots: bestSame.slots };
+      const befSame = filled;
+      while (filled < missingTd.aulas_semana) {
+        if (placeBlock(missingTd, 1)) { filled++; aCount.set(missingTd.id, filled); }
+        else break;
+      }
+      if (filled > befSame) continue outerSame;
+      // Undo.
+      unmarkSlots(state, pb.td, bestSame.diaId, bestSame.slots);
+      for (const s of bestSame.slots) {
+        const idx = allAssignments.findIndex(
+          (a) => a.turma_disciplina_id === pb.td.id && a.time_slot_id === s.id,
+        );
+        if (idx >= 0) allAssignments.splice(idx, 1);
+      }
+      markSlots(state, pb.td, pbDiaId, pb.slots);
+      for (const s of pb.slots) {
+        allAssignments.push({ turma_disciplina_id: pb.td.id, time_slot_id: s.id });
+      }
+      tlSame.set(bestSame.diaId, Math.max(0, (tlSame.get(bestSame.diaId) ?? 0) - bestSame.slots.length));
+      tlSame.set(pbDiaId, (tlSame.get(pbDiaId) ?? 0) + pb.slots.length);
+      balPlaced[pi] = pb;
+    }
+  }
+
+  // Cross-turma displacement repair: for each free turma slot where the missing
+  // professor is blocked by a DIFFERENT turma's block, try to relocate that block.
+  // Handles deadlocks like: C61's only free slot has Rosana teaching C62 there.
+  for (const missingTd of sorted) {
+    let filled = aCount.get(missingTd.id) ?? 0;
+    if (filled >= missingTd.aulas_semana) continue;
+    const turmaUsed = state.turmaUsed.get(missingTd.turma_id) ?? new Set<number>();
+    const freeSlots = slots.filter(
+      (s) => missingTd.allowed_turno_ids.includes(s.turno_id) && !turmaUsed.has(s.id),
+    );
+    for (const freeSlot of freeSlots) {
+      if (filled >= missingTd.aulas_semana) break;
+      const disp = profDispMap.get(missingTd.professor_id)?.get(freeSlot.id);
+      if (!disp?.disponivel) continue;
+      if (!(state.professorUsed.get(missingTd.professor_id)?.has(freeSlot.id))) {
+        // Professor already free here — place directly (safety net).
+        if (placeBlock(missingTd, 1)) { filled++; aCount.set(missingTd.id, filled); }
+        continue;
+      }
+      // Find the other-turma block that is blocking the professor at freeSlot.
+      const blockingIdx = balPlaced.findIndex(
+        (pb) =>
+          pb.td.professor_id === missingTd.professor_id &&
+          pb.td.turma_id !== missingTd.turma_id &&
+          pb.slots.some((s) => s.id === freeSlot.id),
+      );
+      if (blockingIdx < 0) continue;
+      const pb = balPlaced[blockingIdx];
+      const pbDiaId = pb.slots[0].dia_id;
+      unmarkSlots(state, pb.td, pbDiaId, pb.slots);
+      const altsCross = pb.td.allowed_turno_ids
+        .flatMap((tid2) =>
+          findValidBlocks(pb.td, pb.slots.length, getSlotsByTurnoAndDay(slots, tid2), profDispMap, state),
+        )
+        .filter((alt) => !alt.slots.some((s) => pb.slots.some((ps) => ps.id === s.id)));
+      if (altsCross.length === 0) { markSlots(state, pb.td, pbDiaId, pb.slots); continue; }
+      const tlCross = dayLoad.get(pb.td.turma_id) ?? new Map<number, number>();
+      altsCross.sort((a, b) => (tlCross.get(a.diaId) ?? 0) - (tlCross.get(b.diaId) ?? 0));
+      const bestCross = altsCross[0];
+      markSlots(state, pb.td, bestCross.diaId, bestCross.slots);
+      for (const s of pb.slots) {
+        const idx = allAssignments.findIndex(
+          (a) => a.turma_disciplina_id === pb.td.id && a.time_slot_id === s.id,
+        );
+        if (idx >= 0) allAssignments.splice(idx, 1);
+      }
+      for (const s of bestCross.slots) {
+        allAssignments.push({ turma_disciplina_id: pb.td.id, time_slot_id: s.id });
+      }
+      tlCross.set(pbDiaId, Math.max(0, (tlCross.get(pbDiaId) ?? 0) - pb.slots.length));
+      tlCross.set(bestCross.diaId, (tlCross.get(bestCross.diaId) ?? 0) + bestCross.slots.length);
+      balPlaced[blockingIdx] = { td: pb.td, slots: bestCross.slots };
+      const befCross = filled;
+      while (filled < missingTd.aulas_semana) {
+        if (placeBlock(missingTd, 1)) { filled++; aCount.set(missingTd.id, filled); }
+        else break;
+      }
+      if (filled > befCross) continue;
+      // Undo relocation.
+      unmarkSlots(state, pb.td, bestCross.diaId, bestCross.slots);
+      for (const s of bestCross.slots) {
+        const idx = allAssignments.findIndex(
+          (a) => a.turma_disciplina_id === pb.td.id && a.time_slot_id === s.id,
+        );
+        if (idx >= 0) allAssignments.splice(idx, 1);
+      }
+      markSlots(state, pb.td, pbDiaId, pb.slots);
+      for (const s of pb.slots) {
+        allAssignments.push({ turma_disciplina_id: pb.td.id, time_slot_id: s.id });
+      }
+      tlCross.set(bestCross.diaId, Math.max(0, (tlCross.get(bestCross.diaId) ?? 0) - bestCross.slots.length));
+      tlCross.set(pbDiaId, (tlCross.get(pbDiaId) ?? 0) + pb.slots.length);
+      balPlaced[blockingIdx] = pb;
     }
   }
 
@@ -876,6 +1066,7 @@ export function strategyBalanced(
     score: composeScore(tds, allAssignments, slots, profDispMap, weights),
   };
 }
+
 
 // ===================== Simulated annealing (Option B) =====================
 
@@ -1249,7 +1440,6 @@ export async function generateSchedules(
     // outras ainda são salvas. O request só vai para 'failed' se TODAS falharem.
     const settled = await Promise.allSettled([
       strategyOrTools(turmaDisciplinas, timeSlots, profDisp, weights),
-      Promise.resolve(strategyGreedy(turmaDisciplinas, timeSlots, profDisp, weights)),
       Promise.resolve(strategyBalanced(turmaDisciplinas, timeSlots, profDisp, weights)),
     ]);
 

@@ -5,7 +5,6 @@ import TimetableGrid from './TimetableGrid';
 import './OptionCard.css';
 
 const STRATEGY_LABELS = {
-  greedy_best_preference: 'Melhor Preferência',
   balanced_distribution: 'Distribuição Equilibrada',
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
@@ -40,7 +39,6 @@ export default function OptionCard({ option, onEditToggle, onCancelEdit, onSaveE
       <div className="option-header">
         <div className="option-header-info">
           <h3>{STRATEGY_LABELS[option.strategy] || option.strategy}</h3>
-          <Badge variant="score">Score: {option.score}</Badge>
         </div>
         {isEditing
           ? <div className="editing-controls">
