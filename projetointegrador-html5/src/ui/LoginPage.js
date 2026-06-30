@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { apiJson } from '../api';
 import Button from '../components/Button';
 import Spinner from '../components/Spinner';
+import logo from '../duck-schedule-logo.svg';
 import './LoginPage.css';
 
 export default function LoginPage({ onSuccess }) {
@@ -30,6 +31,10 @@ export default function LoginPage({ onSuccess }) {
   return (
     <div className="login-screen">
       <div className="login-shell">
+        <div className="login-brand">
+          <img src={logo} alt="Duck Schedule" className="login-logo" />
+          <span className="login-brand-name">Duck Schedule</span>
+        </div>
         <section className="login-card">
           <h2>Entrar</h2>
           <p>Use o e-mail e a senha do seu perfil para acessar o sistema.</p>
