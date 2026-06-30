@@ -157,6 +157,8 @@ def solve(problem):
     # Anos Finais turmas have one turno (manhã); Ensino Médio turmas may have
     # multiple (manhã + tarde). No-gap is enforced independently per turno.
     turma_turno = {}
+    # (td_id, b_idx) -> list of candidate vars; used by the placement objective.
+    block_vars_map = {}
 
     preference_terms = []     # (var, total preference) -> maximize
     heavy_last_terms = []     # SC6: vars placing a heavy discipline in the last period
@@ -193,11 +195,14 @@ def solve(problem):
                 # Fill-order: pos_of keyed by the run's actual turno_id.
                 pos_sum = sum(pos_of[(run_turno_id, sid)] for sid in slot_ids)
                 fill_terms.append((var, size * day_rank[dia_id], pos_sum))
-            # HC4: every block must be placed exactly once. A block with no
-            # candidate run cannot be placed at all -> the problem is infeasible.
-            if not block_vars:
-                return {"assignments": [], "status": "INFEASIBLE"}
-            model.Add(sum(block_vars) == 1)
+            # HC4 relaxed: every block placed AT MOST once (not exactly once).
+            # Strict == 1 makes the model INFEASIBLE when professor conflicts prevent
+            # placing all blocks simultaneously (e.g. shared professors across many
+            # turmas at 100% slot utilization). The placement objective below
+            # (W_PLACEMENT >> soft weights) ensures the solver still maximizes block
+            # coverage without making the model provably infeasible.
+            model.Add(sum(block_vars) <= 1)
+            block_vars_map[(td["id"], b_idx)] = block_vars
 
     # HC1/HC2: no slot used twice by the same professor or turma.
     for vars_ in turma_slot_vars.values():
@@ -207,14 +212,14 @@ def solve(problem):
         if len(vars_) > 1:
             model.Add(sum(vars_) <= 1)
 
-    # HC no-gap (turma): a turma's occupied aula positions on a day must be
-    # contiguous within each turno. Position-based over the turno's sorted slots,
-    # so recreios (no time_slot) don't count as gaps. Manhã and tarde are enforced
-    # independently (no constraint crosses the lunch break between the two turnos).
-    # For any positions a < b < c on a day within one turno, if a and c are both
-    # occupied then the middle b must be too. occ[p] is the (0/1) occupancy of
-    # position p, i.e. the sum of vars covering that slot for the turma
-    # (HC2 keeps it <= 1).
+    # SC-gap (turma): penalize gaps in a turma's day (soft, not hard).
+    # With many shared professors across turmas, enforcing strict contiguity as a
+    # hard constraint often makes the model INFEASIBLE (professor conflicts prevent
+    # filling the gap). We penalize instead: for positions a < b < c within the
+    # same (turma, turno, day), if a and c are occupied but b is free → gap penalty.
+    # The TS side also measures this as part of composeScore, so the solver steers
+    # toward compact schedules without blocking feasibility.
+    turma_gap_vars = []
     for turma_id, turno_ids in turma_turno.items():
         for turno_id in turno_ids:
             for day_slots in grouped.get(turno_id, {}).values():
@@ -227,7 +232,14 @@ def solve(problem):
                         if not occ[c]:
                             continue
                         for b in range(a + 1, c):
-                            model.Add(sum(occ[b]) >= sum(occ[a]) + sum(occ[c]) - 1)
+                            if not occ[b]:
+                                continue  # no variable covers position b → can't penalize
+                            gap = model.NewBoolVar(
+                                f"tgap_{turma_id}_{turno_id}_{day_slots[0]['dia_id']}_{a}_{b}_{c}"
+                            )
+                            # gap = 1 iff a occupied AND c occupied AND b free
+                            model.Add(gap >= sum(occ[a]) + sum(occ[c]) - sum(occ[b]) - 1)
+                            turma_gap_vars.append(gap)
 
     # Soft spread (SC1): penalize each block of a discipline beyond the first on a day.
     spread_excess = []
@@ -280,6 +292,10 @@ def solve(problem):
     # taper wins over within-day anchoring when they compete.
     W_DAY = int(round(float(weights.get("frontLoadDay", 60))))
     W_EARLY = int(round(float(weights.get("earlyPeriod", 12))))
+    W_TURMA_GAP = int(round(float(weights.get("turmaGap", 2)) * SCALE))
+    # Placement weight: must dominate all soft penalties so the solver places every
+    # block it can before trading off quality. 10000 >> any single soft penalty.
+    W_PLACEMENT = 10000
 
     objective = []
     for var, total_pref in preference_terms:
@@ -294,6 +310,14 @@ def solve(problem):
         objective.append(-W_PRAC * var)
     for var, day_cost, pos_cost in fill_terms:
         objective.append(-(W_DAY * day_cost + W_EARLY * pos_cost) * var)
+    for gap in turma_gap_vars:
+        objective.append(-W_TURMA_GAP * gap)
+    # Maximize placement: each placed block contributes W_PLACEMENT. Since
+    # W_PLACEMENT >> all soft penalties, the solver fills the schedule first and
+    # then optimizes quality — mirroring the greedy's size-1 fallback behaviour.
+    for block_vars_list in block_vars_map.values():
+        if block_vars_list:
+            objective.append(W_PLACEMENT * sum(block_vars_list))
     model.Maximize(sum(objective))
 
     solver = cp_model.CpSolver()

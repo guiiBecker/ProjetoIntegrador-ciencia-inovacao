@@ -1397,11 +1397,18 @@ export async function strategyOrTools(
 ): Promise<ScheduleResult> {
   const profDispMap = buildProfDispMap(profDisps);
   const { assignments, status } = await runCpSatSolver(tds, slots, profDisps, weights);
-  // HC4 (place every aula) is a hard constraint in the model, so anything other
-  // than a feasible, non-empty solution means no schedule satisfies the hard
-  // constraints. Surface it as a failure instead of storing an empty grade.
+  // With HC4 relaxed (at-most-once), the solver may return a partial schedule.
+  // A completely empty result (solver couldn't place a single block) is still an
+  // unrecoverable failure and should surface as such.
   if (assignments.length === 0) {
     throw new Error(`CP-SAT found no feasible schedule (status: ${status})`);
+  }
+  const totalAulas = tds.reduce((s, td) => s + td.aulas_semana, 0);
+  const placedAulas = assignments.length;
+  if (placedAulas < totalAulas) {
+    console.log(
+      `[Scheduler] OR-Tools placed ${placedAulas}/${totalAulas} aulas (status: ${status})`,
+    );
   }
   return {
     strategy: 'or_tools_cpsat',
@@ -1448,7 +1455,7 @@ export async function generateSchedules(
       if (s.status === 'fulfilled') {
         results.push(s.value);
       } else {
-        console.warn(`[Scheduler] Uma estratégia falhou: ${(s.reason as Error).message}`);
+        console.error(`[Scheduler] Estratégia falhou (request ${requestId}):`, (s.reason as Error).message);
       }
     }
 
@@ -1463,13 +1470,14 @@ export async function generateSchedules(
       );
       const optionId = optRes.rows[0].id;
 
-      if (result.assignments.length > 0) {
-        const values: (number)[] = [];
-        const placeholders: string[] = [];
-        let idx = 1;
-        for (const a of result.assignments) {
-          placeholders.push(`($${idx++}, $${idx++}, $${idx++})`);
-          values.push(optionId, a.turma_disciplina_id, a.time_slot_id);
+      const assignments = result.assignments;
+      if (assignments.length > 0) {
+        const placeholders = assignments.map(
+          (_, i) => `($1, $${i * 2 + 2}, $${i * 2 + 3})`,
+        );
+        const values: (number | string)[] = [optionId];
+        for (const a of assignments) {
+          values.push(a.turma_disciplina_id, a.time_slot_id);
         }
         await pool.query(
           `INSERT INTO schedule_option_item (option_id, turma_disciplina_id, time_slot_id) VALUES ${placeholders.join(', ')}`,
@@ -1483,8 +1491,8 @@ export async function generateSchedules(
       [requestId],
     );
     console.log(`[Scheduler] Request ${requestId}: generated ${results.length} options`);
-  } catch (error) {
-    console.error(`[Scheduler] Request ${requestId} failed:`, error);
+  } catch (err) {
+    console.error(`[Scheduler] Request ${requestId} failed:`, err);
     await pool.query(
       "UPDATE schedule_request SET status = 'failed' WHERE id = $1",
       [requestId],

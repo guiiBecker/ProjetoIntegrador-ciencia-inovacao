@@ -78,6 +78,7 @@ services:
       context: ./projetointegrador-worker
       dockerfile: Dockerfile
     container_name: schedule-worker
+    restart: unless-stopped
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -86,6 +87,9 @@ services:
       - DB_PASSWORD=admin123
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Aponta explicitamente para o Python do venv com OR-Tools instalado,
+      # evitando que resolvePythonBin() caia no python3 do sistema (sem ortools).
+      - PYTHON_BIN=/opt/venv/bin/python3
     depends_on:
       db:
         condition: service_healthy

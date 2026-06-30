@@ -161,7 +161,7 @@ function App() {
   return (
     <div className="auth-shell">
       <Header
-        title="Grade Horária Escolar"
+        title="Duck Schedule"
         subtitle={auth.role === 'admin' ? 'Painel do administrador' : 'Painel de consulta'}
         rightContent={(
           <div className="auth-session">

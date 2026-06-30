@@ -218,7 +218,7 @@ export class ScheduleService {
       [item.option_id, newTimeSlotId, item.turma_id, itemId],
     );
     if (turmaConflict.rows.length > 0) {
-      return { success: false, error: 'Turma ja tem aula neste horario' };
+      return { success: false, error: 'Turma já tem aula neste horário' };
     }
 
     // Check professor conflict: professor already teaching at this slot (in same option)
@@ -229,7 +229,7 @@ export class ScheduleService {
       [item.option_id, newTimeSlotId, item.professor_id, itemId],
     );
     if (profConflict.rows.length > 0) {
-      return { success: false, error: 'Professor ja tem aula neste horario' };
+      return { success: false, error: 'Professor já tem aula neste horário' };
     }
 
     await this.pool.query(
@@ -297,7 +297,7 @@ export class ScheduleService {
       );
       if (availA.rows.length === 0) {
         await client.query('ROLLBACK');
-        return { success: false, error: 'Professor da aula movida nao disponivel no horario destino' };
+        return { success: false, error: 'Professor da aula movida não disponível no horário de destino' };
       }
       const availB = await client.query(
         `SELECT 1 FROM professor_disponibilidade
@@ -306,7 +306,7 @@ export class ScheduleService {
       );
       if (availB.rows.length === 0) {
         await client.query('ROLLBACK');
-        return { success: false, error: 'Professor da aula trocada nao disponivel no horario destino' };
+        return { success: false, error: 'Professor da aula trocada não disponível no horário de destino' };
       }
 
       // Professor conflicts after swap (excluding the two items themselves)
@@ -319,7 +319,7 @@ export class ScheduleService {
       );
       if (profConflictA.rows.length > 0) {
         await client.query('ROLLBACK');
-        return { success: false, error: 'Professor da aula movida ja tem aula no horario destino' };
+        return { success: false, error: 'Professor da aula movida já tem aula no horário de destino' };
       }
       const profConflictB = await client.query(
         `SELECT soi.id FROM schedule_option_item soi
@@ -330,7 +330,7 @@ export class ScheduleService {
       );
       if (profConflictB.rows.length > 0) {
         await client.query('ROLLBACK');
-        return { success: false, error: 'Professor da aula trocada ja tem aula no horario destino' };
+        return { success: false, error: 'Professor da aula trocada já tem aula no horário de destino' };
       }
 
       await client.query(

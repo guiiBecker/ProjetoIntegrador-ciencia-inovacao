@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Spinner from '../components/Spinner';
 import OptionCard from '../components/OptionCard';
+import { disciplineColorForItem } from '../utils/disciplineColors';
 import './GradePage.css';
 
 // ── PDF export ─────────────────────────────────────────────────────────────────
@@ -13,27 +14,48 @@ const STRATEGY_LABELS_PDF = {
   balanced_distribution: 'Distribuição Equilibrada',
   or_tools_cpsat: 'OR-Tools (CP-SAT)',
 };
-function hashString(str) {
-  let hash = 0;
-  const s = String(str ?? '');
-  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(hash);
+
+// Convert a CSS color string (#RRGGBB or hsl(...)) to a [r, g, b] array for jsPDF.
+function colorToRgb(color) {
+  if (!color) return [128, 128, 128];
+  const s = String(color).trim();
+  // Hex format: #RRGGBB
+  if (s.startsWith('#')) {
+    const h = s.replace('#', '');
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  // HSL format: hsl(h, s%, l%)
+  const m = s.match(/hsl\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*\)/i);
+  if (m) {
+    let h = parseFloat(m[1]) / 360;
+    const sat = parseFloat(m[2]) / 100;
+    const lit = parseFloat(m[3]) / 100;
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    if (sat === 0) { const v = Math.round(lit * 255); return [v, v, v]; }
+    const q = lit < 0.5 ? lit * (1 + sat) : lit + sat - lit * sat;
+    const p = 2 * lit - q;
+    return [
+      Math.round(hue2rgb(p, q, h + 1/3) * 255),
+      Math.round(hue2rgb(p, q, h) * 255),
+      Math.round(hue2rgb(p, q, h - 1/3) * 255),
+    ];
+  }
+  return [128, 128, 128];
 }
 
-// Returns [r, g, b] arrays for bg, border, text
-function discColorRgb(key) {
-  const hue = hashString(key) % 360;
-  const hsl2rgb = (h, s, l) => {
-    s /= 100; l /= 100;
-    const k = n => (n + h / 30) % 12;
-    const a = s * Math.min(l, 1 - l);
-    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
-  };
+// Returns { bg, border, text } as [r,g,b] arrays using the same palette as the UI.
+function discColorRgb(item) {
+  const c = disciplineColorForItem(item);
   return {
-    bg: hsl2rgb(hue, 70, 93),
-    border: hsl2rgb(hue, 55, 70),
-    text: hsl2rgb(hue, 60, 30),
+    bg: colorToRgb(c.bg),
+    border: colorToRgb(c.border),
+    text: colorToRgb(c.text),
   };
 }
 
@@ -129,7 +151,7 @@ function exportSchedulePDF(option, requestId) {
         const dia = dias[data.column.index - 1];
         const cell = grid[`${dia}-${pNum}`];
         if (!cell?.disciplina_sigla) return;
-        const c = discColorRgb(cell.disciplina_id ?? cell.disciplina_sigla ?? '');
+        const c = discColorRgb(cell);
         data.cell.styles.fillColor = c.bg;
       },
       // Draw text and accent bar manually (body is empty so no double-render)
@@ -139,7 +161,7 @@ function exportSchedulePDF(option, requestId) {
         const dia = dias[data.column.index - 1];
         const cell = grid[`${dia}-${pNum}`];
         if (!cell?.disciplina_sigla) return;
-        const c = discColorRgb(cell.disciplina_id ?? cell.disciplina_sigla ?? '');
+        const c = discColorRgb(cell);
         // Left-side color accent bar
         doc.setDrawColor(...c.border);
         doc.setLineWidth(1.2);
@@ -292,10 +314,11 @@ export default function GradePage() {
     setEditingOptionId(null); setSelectedItem(null); setEditError(''); setPreEditSnapshot(null);
   };
 
-  // Save edit: exit edit mode and keep backend changes (already persisted by drag-drop).
+  // Save edit: exit edit mode, refresh, then auto-save the grade.
   const handleSaveEdit = async () => {
     setEditingOptionId(null); setSelectedItem(null); setEditError(''); setPreEditSnapshot(null);
     await fetchDetail(activeRequest.id);
+    handleSave();
   };
 
   const isProfessorUnavailable = useCallback((professorId, diaId, periodoNum) => {
@@ -499,19 +522,6 @@ export default function GradePage() {
               <div className="options-header-bar">
                 <h2>{isConfirmed ? `Grade Salva — Requisição #${activeRequest.id}` : `Opções de Grade — Requisição #${activeRequest.id}`}</h2>
               </div>
-              {confirmedBannerVisible && (
-                <div className="confirmed-banner">
-                  Grade salva com sucesso na base de dados.
-                  <button className="banner-close" onClick={() => setConfirmedBannerVisible(false)} title="Fechar">✕</button>
-                </div>
-              )}
-              {editError && (
-                <div className="edit-error">
-                  {editError}
-                  <button className="banner-close error" onClick={() => setEditError('')} title="Fechar">✕</button>
-                </div>
-              )}
-
               <div className="option-tabs" role="tablist">
                 {activeRequest.options.map(opt => (
                   <button key={opt.id}
@@ -566,6 +576,22 @@ export default function GradePage() {
           </div>
         </div>
       )}
+
+      {/* Bottom toast notifications */}
+      <div className="toast-area">
+        {confirmedBannerVisible && (
+          <div className="confirmed-banner">
+            Grade salva com sucesso na base de dados.
+            <button className="banner-close" onClick={() => setConfirmedBannerVisible(false)} title="Fechar">✕</button>
+          </div>
+        )}
+        {editError && (
+          <div className="edit-error">
+            {editError}
+            <button className="banner-close error" onClick={() => setEditError('')} title="Fechar">✕</button>
+          </div>
+        )}
+      </div>
 
       {/* Delete confirmation modal */}
       {deleteConfirmOpen && (
